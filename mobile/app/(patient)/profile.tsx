@@ -41,10 +41,10 @@ export default function ProfileScreen() {
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get('/profile/health');
+      const response = await api.get('/patients/me');
       setProfile(response.data);
     } catch (error) {
-      // profile may not exist yet
+      // handle error
     } finally {
       setLoadingProfile(false);
     }
