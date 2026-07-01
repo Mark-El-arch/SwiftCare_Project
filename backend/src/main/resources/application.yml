@@ -32,3 +32,6 @@ paystack:
 ai:
   api-key: your_claude_or_openai_key_here
   model: claude-haiku-4-5
+
+firebase:
+  credentials-path: firebase-service-account.json
