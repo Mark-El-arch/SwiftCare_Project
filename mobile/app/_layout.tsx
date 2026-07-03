@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import api from '../services/api';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -13,9 +14,26 @@ export default function RootLayout() {
 
   const checkAuth = async () => {
     const token = await AsyncStorage.getItem('accessToken');
-    if (token) {
-      router.replace('/(patient)/profile');
-    } else {
+    if (!token) {
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    try {
+      const response = await api.get('/patients/me');
+      const role = response.data.role;
+
+      if (role === 'DOCTOR') {
+        router.replace('/(doctor)/queue');
+      } else if (role === 'PHARMACIST') {
+        router.replace('/(pharmacist)/dispense');
+      } else if (role === 'ADMIN') {
+        router.replace('/(admin)/dashboard');
+      } else {
+        router.replace('/(patient)/home');
+      }
+    } catch {
+      await AsyncStorage.removeItem('accessToken');
       router.replace('/(auth)/login');
     }
   };
