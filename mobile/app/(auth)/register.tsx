@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -60,109 +61,111 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-        <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        >
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join SwiftCare to manage your healthcare</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+          <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          >
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join SwiftCare to manage your healthcare</Text>
 
-        <View style={styles.form}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-            style={styles.input}
-            placeholder="Enter your full name"
-            placeholderTextColor={Colors.textDisabled}
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            returnKeyType='next'
-            />
+          <View style={styles.form}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput
+              style={styles.input}
+              placeholder="Enter your full name"
+              placeholderTextColor={Colors.textDisabled}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              returnKeyType='next'
+              />
 
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-            style={styles.input}
-            placeholder="Enter your email"
-            placeholderTextColor={Colors.textDisabled}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            returnKeyType='next'
-            />
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              placeholderTextColor={Colors.textDisabled}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              returnKeyType='next'
+              />
 
-            <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-            style={styles.input}
-            placeholder="Enter your phone number"
-            placeholderTextColor={Colors.textDisabled}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            returnKeyType='next'
-            />
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput
+              style={styles.input}
+              placeholder="Enter your phone number"
+              placeholderTextColor={Colors.textDisabled}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              returnKeyType='next'
+              />
 
-            <Text style={styles.label}>Date of Birth</Text>
-            <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={Colors.textDisabled}
-            value={dateOfBirth}
-            onChangeText={setDateOfBirth}
-            returnKeyType='next'
-            />
+              <Text style={styles.label}>Date of Birth</Text>
+              <TextInput
+              style={styles.input}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={Colors.textDisabled}
+              value={dateOfBirth}
+              onChangeText={setDateOfBirth}
+              returnKeyType='next'
+              />
 
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordContainer}>
-                <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Create a password"
-                    placeholderTextColor={Colors.textDisabled}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-                >
-                <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={22}
-                    color={Colors.textDisabled}
-                />
-                </TouchableOpacity>
-            </View>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.passwordContainer}>
+                  <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Create a password"
+                      placeholderTextColor={Colors.textDisabled}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                  >
+                  <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={Colors.textDisabled}
+                  />
+                  </TouchableOpacity>
+              </View>
 
-            <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleRegister}
-            disabled={loading}
-            >
-            {loading ? (
-                <ActivityIndicator color={Colors.white} />
-            ) : (
-                <Text style={styles.buttonText}>Create Account</Text>
-            )}
-            </TouchableOpacity>
+              <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleRegister}
+              disabled={loading}
+              >
+              {loading ? (
+                  <ActivityIndicator color={Colors.white} />
+              ) : (
+                  <Text style={styles.buttonText}>Create Account</Text>
+              )}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => router.replace('/(auth)/login')}
-            >
-            <Text style={styles.linkText}>
-                Already have an account?{' '}
-                <Text style={styles.linkTextBold}>Sign In</Text>
-            </Text>
-            </TouchableOpacity>
-        </View>
-        </ScrollView>
-    </KeyboardAvoidingView>
+              <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => router.replace('/(auth)/login')}
+              >
+              <Text style={styles.linkText}>
+                  Already have an account?{' '}
+                  <Text style={styles.linkTextBold}>Sign In</Text>
+              </Text>
+              </TouchableOpacity>
+          </View>
+          </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -173,7 +176,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60,
   },
   title: {
     fontSize: 28,

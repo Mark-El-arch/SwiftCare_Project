@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 
-export default function DoctorLayout() {
+export default function AdminLayout() {
   return (
     <Tabs
       screenOptions={{
@@ -16,20 +16,29 @@ export default function DoctorLayout() {
       }}
     >
       <Tabs.Screen
-        name="queue"
+        name="dashboard"
         options={{
-          title: 'Patient Queue',
+          title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
+            <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="consultation"
+        name="departments"
         options={{
-          title: 'Consultations',
+          title: 'Departments',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="videocam-outline" size={size} color={color} />
+            <Ionicons name="business-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="staff"
+        options={{
+          title: 'Staff',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
       />

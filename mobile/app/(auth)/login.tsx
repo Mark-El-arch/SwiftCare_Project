@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function LoginScreen() {
@@ -34,7 +35,7 @@ export default function LoginScreen() {
       const response = await api.post('/auth/login', { email, password });
       const { accessToken } = response.data;
       await AsyncStorage.setItem('accessToken', accessToken);
-      router.replace('/(patient)/profile');
+      router.replace('/(patient)/home');
     } catch (error: any) {
       const message =
         error.response?.data?.message || 'Login failed. Try again.';
@@ -45,68 +46,78 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Sign in to your SwiftCare account</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to your SwiftCare account</Text>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          placeholderTextColor={Colors.textDisabled}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          returnKeyType='next'
-        />
+        <View style={styles.form}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            placeholderTextColor={Colors.textDisabled}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType='next'
+          />
 
-        <Text style={styles.label}>Password</Text>
-        <View style={styles.passwordContainer}>
-            <TextInput
-                style={styles.passwordInput}
-                placeholder="Create a password"
-                placeholderTextColor={Colors.textDisabled}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() => setShowPassword(!showPassword)}
-            >
-            <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={22}
-                color={Colors.textDisabled}
-            />
-            </TouchableOpacity>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordContainer}>
+              <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Create a password"
+                  placeholderTextColor={Colors.textDisabled}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+              >
+              <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color={Colors.textDisabled}
+              />
+              </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => router.replace('/(auth)/register')}
+          >
+            <Text style={styles.linkText}>
+              Don't have an account?{' '}
+              <Text style={styles.linkTextBold}>Create one</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={Colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => router.replace('/(auth)/register')}
-        >
-          <Text style={styles.linkText}>
-            Don't have an account?{' '}
-            <Text style={styles.linkTextBold}>Create one</Text>
-          </Text>
-        </TouchableOpacity>
       </View>
-    </View>
+      <TouchableOpacity
+        style={styles.staffLink}
+        onPress={() => router.push('/(auth)/staff-login')}
+      >
+        <Text style={styles.staffLinkText}>
+          Doctor or Pharmacist? <Text style={styles.staffLinkBold}>Staff Login →</Text>
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
@@ -115,7 +126,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     padding: 24,
-    paddingTop: 80,
   },
   title: {
     fontSize: 28,
@@ -194,5 +204,18 @@ passwordInput: {
 eyeButton: {
   paddingHorizontal: 14,
   paddingVertical: 14,
+},
+staffLink: {
+  alignItems: 'center',
+  marginTop: 12,
+  paddingVertical: 8,
+},
+staffLinkText: {
+  fontSize: 13,
+  color: Colors.textDisabled,
+},
+staffLinkBold: {
+  color: Colors.primary,
+  fontWeight: '700',
 },
 });

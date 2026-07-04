@@ -1,4 +1,4 @@
-package com.swiftcare.backend.patient;
+package com.swiftcare.backend.consultation;
 
 import com.swiftcare.backend.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -11,27 +11,26 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/patients")
+@RequestMapping("/doctors")
 @RequiredArgsConstructor
-public class PatientController {
+public class DoctorController {
 
-    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
 
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getMe(
             @AuthenticationPrincipal String email) {
 
-        Patient patient = patientRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+        Doctor doctor = doctorRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
 
         return ResponseEntity.ok(Map.of(
-                "id", patient.getId(),
-                "name", patient.getName(),
-                "email", patient.getEmail(),
-                "phone", patient.getPhone(),
-                "tier", patient.getTier(),
-                "role", patient.getRole(),
-                "createdAt", patient.getCreatedAt()
+                "id", doctor.getId(),
+                "name", doctor.getName(),
+                "email", doctor.getEmail(),
+                "role", doctor.getRole(),
+                "departmentId", doctor.getDepartment().getId(),
+                "departmentName", doctor.getDepartment().getName()
         ));
     }
 }
