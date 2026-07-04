@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { WebView } from 'react-native-webview';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ConsultationScreen() {
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -110,7 +111,7 @@ export default function ConsultationScreen() {
   }
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Consultations</Text>
@@ -239,13 +240,13 @@ export default function ConsultationScreen() {
           )}
         </View>
       </Modal>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary },

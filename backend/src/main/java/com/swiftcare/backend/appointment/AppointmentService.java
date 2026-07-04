@@ -129,7 +129,24 @@ public class AppointmentService {
     }
 
     private LocalDateTime calculateEstimatedCallTime(Department department, int position) {
-        return LocalDateTime.now().plusMinutes((long) position * 15);
+        // Parse department opening hour from operatingHours string e.g. "08:00 - 17:00"
+        String[] hours = department.getOperatingHours().split(" - ");
+        String[] openTime = hours[0].trim().split(":");
+        int openHour = Integer.parseInt(openTime[0]);
+        int openMin = Integer.parseInt(openTime[1]);
+
+        LocalDateTime departmentOpen = LocalDateTime.now()
+                .withHour(openHour)
+                .withMinute(openMin)
+                .withSecond(0)
+                .withNano(0);
+
+        // If department opens tomorrow (already past today's opening)
+        if (LocalDateTime.now().isAfter(departmentOpen)) {
+            departmentOpen = departmentOpen.plusDays(1);
+        }
+
+        return departmentOpen.plusMinutes((long) position * 15);
     }
 
     private void recalculateQueuePositions(UUID departmentId) {

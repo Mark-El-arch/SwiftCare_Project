@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -67,68 +68,70 @@ export default function AdminDashboard() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-      }
-    >
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Admin Dashboard</Text>
-          <Text style={styles.subtitle}>SwiftCare Hospital System</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+      >
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Admin Dashboard</Text>
+            <Text style={styles.subtitle}>SwiftCare Hospital System</Text>
+          </View>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: Colors.primaryLight }]}>
-          <Text style={styles.statNumber}>{stats?.totalDepartments}</Text>
-          <Text style={styles.statLabel}>Departments</Text>
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: Colors.primaryLight }]}>
+            <Text style={styles.statNumber}>{stats?.totalDepartments}</Text>
+            <Text style={styles.statLabel}>Departments</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.successLight }]}>
+            <Text style={styles.statNumber}>{stats?.activeDepartments}</Text>
+            <Text style={styles.statLabel}>Active</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.warningLight }]}>
+            <Text style={styles.statNumber}>{stats?.pendingAppointments}</Text>
+            <Text style={styles.statLabel}>In Queue</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.infoLight }]}>
+            <Text style={styles.statNumber}>{stats?.completedAppointments}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
         </View>
-        <View style={[styles.statCard, { backgroundColor: Colors.successLight }]}>
-          <Text style={styles.statNumber}>{stats?.activeDepartments}</Text>
-          <Text style={styles.statLabel}>Active</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: Colors.warningLight }]}>
-          <Text style={styles.statNumber}>{stats?.pendingAppointments}</Text>
-          <Text style={styles.statLabel}>In Queue</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: Colors.infoLight }]}>
-          <Text style={styles.statNumber}>{stats?.completedAppointments}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-      </View>
 
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(admin)/departments')}
-        >
-          <Text style={styles.actionIcon}>🏥</Text>
-          <Text style={styles.actionLabel}>Manage Departments</Text>
-          <Text style={styles.actionArrow}>›</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(admin)/staff')}
-        >
-          <Text style={styles.actionIcon}>👨‍⚕️</Text>
-          <Text style={styles.actionLabel}>Manage Staff</Text>
-          <Text style={styles.actionArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/(admin)/departments')}
+          >
+            <Text style={styles.actionIcon}>🏥</Text>
+            <Text style={styles.actionLabel}>Manage Departments</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/(admin)/staff')}
+          >
+            <Text style={styles.actionIcon}>👨‍⚕️</Text>
+            <Text style={styles.actionLabel}>Manage Staff</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 'bold', color: Colors.textPrimary },

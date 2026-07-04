@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DispenseScreen() {
   const router = useRouter();
@@ -95,133 +96,135 @@ export default function DispenseScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Dispense Medication</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-
-      {!prescription ? (
-        <View style={styles.scanSection}>
-          <Text style={styles.subtitle}>
-            Enter the prescription ID from the patient's QR code to view and dispense their medication.
-          </Text>
-
-          <Text style={styles.label}>Prescription ID</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter prescription ID"
-            placeholderTextColor={Colors.textDisabled}
-            value={qrCode}
-            onChangeText={setQrCode}
-            autoCapitalize="none"
-          />
-
-          <TouchableOpacity
-            style={[styles.scanButton, loading && styles.buttonDisabled]}
-            onPress={handleScanQr}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.scanButtonText}>Look Up Prescription</Text>
-            )}
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Dispense Medication</Text>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.prescriptionSection}>
-          <View style={styles.prescriptionHeader}>
-            <View>
-              <Text style={styles.prescLabel}>Prescription</Text>
-              <Text style={styles.prescId}>#{prescription.id.slice(0, 8).toUpperCase()}</Text>
-            </View>
-            <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-              <Text style={styles.resetButtonText}>New Scan</Text>
+
+        {!prescription ? (
+          <View style={styles.scanSection}>
+            <Text style={styles.subtitle}>
+              Enter the prescription ID from the patient's QR code to view and dispense their medication.
+            </Text>
+
+            <Text style={styles.label}>Prescription ID</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter prescription ID"
+              placeholderTextColor={Colors.textDisabled}
+              value={qrCode}
+              onChangeText={setQrCode}
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity
+              style={[styles.scanButton, loading && styles.buttonDisabled]}
+              onPress={handleScanQr}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.scanButtonText}>Look Up Prescription</Text>
+              )}
             </TouchableOpacity>
           </View>
-
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Issued</Text>
-              <Text style={styles.infoValue}>
-                {new Date(prescription.issuedAt).toLocaleDateString('en-GB', {
-                  day: 'numeric', month: 'short', year: 'numeric'
-                })}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Remaining</Text>
-              <Text style={[
-                styles.infoValue,
-                { color: remaining.length === 0 ? Colors.success : Colors.warning }
-              ]}>
-                {remaining.length === 0 ? 'Fully dispensed' : `${remaining.length} drug(s) pending`}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.label}>Your Pharmacy Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. KNUST Pharmacy"
-            placeholderTextColor={Colors.textDisabled}
-            value={pharmacyName}
-            onChangeText={setPharmacyName}
-          />
-
-          <Text style={styles.sectionTitle}>Drugs to Dispense</Text>
-
-          {remaining.length === 0 ? (
-            <View style={styles.allDoneCard}>
-              <Text style={styles.allDoneIcon}>✅</Text>
-              <Text style={styles.allDoneText}>All drugs have been dispensed</Text>
-            </View>
-          ) : (
-            remaining.map((record: any) => (
-              <View key={record.id} style={styles.drugCard}>
-                <Text style={styles.drugName}>{record.drugName}</Text>
-                <View style={styles.drugActions}>
-                  <TouchableOpacity
-                    style={[
-                      styles.dispenseButton,
-                      dispensing === record.drugName && styles.buttonDisabled
-                    ]}
-                    onPress={() => handleDispense(record.drugName, 'DISPENSED')}
-                    disabled={dispensing === record.drugName}
-                  >
-                    {dispensing === record.drugName ? (
-                      <ActivityIndicator color={Colors.white} size="small" />
-                    ) : (
-                      <Text style={styles.dispenseButtonText}>Dispense</Text>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.unavailableButton,
-                      dispensing === record.drugName && styles.buttonDisabled
-                    ]}
-                    onPress={() => handleDispense(record.drugName, 'UNAVAILABLE')}
-                    disabled={dispensing === record.drugName}
-                  >
-                    <Text style={styles.unavailableButtonText}>Unavailable</Text>
-                  </TouchableOpacity>
-                </View>
+        ) : (
+          <View style={styles.prescriptionSection}>
+            <View style={styles.prescriptionHeader}>
+              <View>
+                <Text style={styles.prescLabel}>Prescription</Text>
+                <Text style={styles.prescId}>#{prescription.id.slice(0, 8).toUpperCase()}</Text>
               </View>
-            ))
-          )}
-        </View>
-      )}
-    </ScrollView>
+              <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+                <Text style={styles.resetButtonText}>New Scan</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Issued</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(prescription.issuedAt).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                  })}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Remaining</Text>
+                <Text style={[
+                  styles.infoValue,
+                  { color: remaining.length === 0 ? Colors.success : Colors.warning }
+                ]}>
+                  {remaining.length === 0 ? 'Fully dispensed' : `${remaining.length} drug(s) pending`}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.label}>Your Pharmacy Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. KNUST Pharmacy"
+              placeholderTextColor={Colors.textDisabled}
+              value={pharmacyName}
+              onChangeText={setPharmacyName}
+            />
+
+            <Text style={styles.sectionTitle}>Drugs to Dispense</Text>
+
+            {remaining.length === 0 ? (
+              <View style={styles.allDoneCard}>
+                <Text style={styles.allDoneIcon}>✅</Text>
+                <Text style={styles.allDoneText}>All drugs have been dispensed</Text>
+              </View>
+            ) : (
+              remaining.map((record: any) => (
+                <View key={record.id} style={styles.drugCard}>
+                  <Text style={styles.drugName}>{record.drugName}</Text>
+                  <View style={styles.drugActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.dispenseButton,
+                        dispensing === record.drugName && styles.buttonDisabled
+                      ]}
+                      onPress={() => handleDispense(record.drugName, 'DISPENSED')}
+                      disabled={dispensing === record.drugName}
+                    >
+                      {dispensing === record.drugName ? (
+                        <ActivityIndicator color={Colors.white} size="small" />
+                      ) : (
+                        <Text style={styles.dispenseButtonText}>Dispense</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.unavailableButton,
+                        dispensing === record.drugName && styles.buttonDisabled
+                      ]}
+                      onPress={() => handleDispense(record.drugName, 'UNAVAILABLE')}
+                      disabled={dispensing === record.drugName}
+                    >
+                      <Text style={styles.unavailableButtonText}>Unavailable</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary },
   logoutText: { color: Colors.danger, fontSize: 14, fontWeight: '600' },

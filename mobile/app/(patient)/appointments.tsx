@@ -11,6 +11,8 @@ import {
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: Colors.warning,
@@ -64,10 +66,13 @@ export default function AppointmentsScreen() {
       scheduledTime.setDate(scheduledTime.getDate() + 1);
       scheduledTime.setHours(9, 0, 0, 0);
 
+      const savedScore = await AsyncStorage.getItem('lastSeverityScore');
+      const severityScore = savedScore ? parseInt(savedScore) : 3;
+
       await api.post('/appointments', {
         departmentId: selectedDept,
         scheduledTime: scheduledTime.toISOString().slice(0, 19),
-        severityScore: 5,
+        severityScore,
       });
 
       Alert.alert('Success', 'Appointment booked successfully');
@@ -108,93 +113,95 @@ export default function AppointmentsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Appointments</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setShowBooking(!showBooking)}
-        >
-          <Text style={styles.addButtonText}>{showBooking ? 'Cancel' : '+ Book'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {showBooking && (
-        <View style={styles.bookingCard}>
-          <Text style={styles.sectionTitle}>Book Appointment</Text>
-          <Text style={styles.label}>Select Department</Text>
-          {departments.map(dept => (
-            <TouchableOpacity
-              key={dept.id}
-              style={[
-                styles.deptOption,
-                selectedDept === dept.id && styles.deptOptionSelected,
-              ]}
-              onPress={() => setSelectedDept(dept.id)}
-            >
-              <Text style={[
-                styles.deptOptionText,
-                selectedDept === dept.id && styles.deptOptionTextSelected,
-              ]}>
-                {dept.name}
-              </Text>
-              <Text style={styles.deptHours}>{dept.operatingHours}</Text>
-            </TouchableOpacity>
-          ))}
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Appointments</Text>
           <TouchableOpacity
-            style={[styles.bookButton, booking && styles.buttonDisabled]}
-            onPress={handleBook}
-            disabled={booking}
+            style={styles.addButton}
+            onPress={() => setShowBooking(!showBooking)}
           >
-            {booking ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.bookButtonText}>Confirm Booking</Text>
-            )}
+            <Text style={styles.addButtonText}>{showBooking ? 'Cancel' : '+ Book'}</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      <Text style={styles.sectionTitle}>Your Appointments</Text>
-
-      {appointments.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No appointments yet</Text>
-          <Text style={styles.emptySubtext}>Book your first appointment above</Text>
-        </View>
-      ) : (
-        appointments.map(apt => (
-          <View key={apt.id} style={styles.appointmentCard}>
-            <View style={styles.aptHeader}>
-              <Text style={styles.aptDept}>{apt.departmentName}</Text>
-              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[apt.status] + '20' }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLORS[apt.status] }]}>
-                  {apt.status}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.aptTime}>
-              {new Date(apt.scheduledTime).toLocaleDateString('en-GB', {
-                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-              })}
-            </Text>
-            <View style={styles.aptMeta}>
-              <Text style={styles.aptMetaText}>Queue Position: {apt.queuePosition}</Text>
-              <Text style={styles.aptMetaText}>Severity Score: {apt.severityScore}</Text>
-            </View>
-            {apt.status === 'PENDING' && (
+        {showBooking && (
+          <View style={styles.bookingCard}>
+            <Text style={styles.sectionTitle}>Book Appointment</Text>
+            <Text style={styles.label}>Select Department</Text>
+            {departments.map(dept => (
               <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => handleCancel(apt.id)}
+                key={dept.id}
+                style={[
+                  styles.deptOption,
+                  selectedDept === dept.id && styles.deptOptionSelected,
+                ]}
+                onPress={() => setSelectedDept(dept.id)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[
+                  styles.deptOptionText,
+                  selectedDept === dept.id && styles.deptOptionTextSelected,
+                ]}>
+                  {dept.name}
+                </Text>
+                <Text style={styles.deptHours}>{dept.operatingHours}</Text>
               </TouchableOpacity>
-            )}
+            ))}
+
+            <TouchableOpacity
+              style={[styles.bookButton, booking && styles.buttonDisabled]}
+              onPress={handleBook}
+              disabled={booking}
+            >
+              {booking ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.bookButtonText}>Confirm Booking</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        ))
-      )}
-    </ScrollView>
+        )}
+
+        <Text style={styles.sectionTitle}>Your Appointments</Text>
+
+        {appointments.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No appointments yet</Text>
+            <Text style={styles.emptySubtext}>Book your first appointment above</Text>
+          </View>
+        ) : (
+          appointments.map(apt => (
+            <View key={apt.id} style={styles.appointmentCard}>
+              <View style={styles.aptHeader}>
+                <Text style={styles.aptDept}>{apt.departmentName}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[apt.status] + '20' }]}>
+                  <Text style={[styles.statusText, { color: STATUS_COLORS[apt.status] }]}>
+                    {apt.status}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.aptTime}>
+                {new Date(apt.scheduledTime).toLocaleDateString('en-GB', {
+                  weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                })}
+              </Text>
+              <View style={styles.aptMeta}>
+                <Text style={styles.aptMetaText}>Queue Position: {apt.queuePosition}</Text>
+                <Text style={styles.aptMetaText}>Severity Score: {apt.severityScore}</Text>
+              </View>
+              {apt.status === 'PENDING' && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancel(apt.id)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -205,7 +212,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
   centered: {

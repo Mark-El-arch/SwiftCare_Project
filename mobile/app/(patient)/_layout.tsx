@@ -43,33 +43,6 @@ export default function PatientLayout() {
         }}
       />
       <Tabs.Screen
-        name="symptoms"
-        options={{
-          title: 'Symptoms',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="medkit-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="consultation"
-        options={{
-          title: 'Consult',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="videocam-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="prescription"
-        options={{
-          title: 'Rx',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -78,6 +51,10 @@ export default function PatientLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="symptoms" options={{ href: null}}/>
+      <Tabs.Screen name="consultation" options={{ href: null}}/>
+      <Tabs.Screen name="prescription" options={{ href: null}}/>
+    
     </Tabs>
   );
 }

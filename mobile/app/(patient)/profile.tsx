@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PatientProfile {
   name: string;
@@ -101,109 +102,111 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.pageTitle}>My Profile</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.pageTitle}>My Profile</Text>
 
-      {/* Tier Badge */}
-      <View style={styles.tierBadgeRow}>
-        <View
-          style={[
-            styles.tierBadge,
-            {
-              backgroundColor:
-                profile?.tier === 'PREMIUM'
-                  ? Colors.tierPremiumBg
-                  : Colors.tierFreeBg,
-            },
-          ]}
-        >
-          <Text
+        {/* Tier Badge */}
+        <View style={styles.tierBadgeRow}>
+          <View
             style={[
-              styles.tierBadgeText,
+              styles.tierBadge,
               {
-                color:
+                backgroundColor:
                   profile?.tier === 'PREMIUM'
-                    ? Colors.tierPremium
-                    : Colors.tierFree,
+                    ? Colors.tierPremiumBg
+                    : Colors.tierFreeBg,
               },
             ]}
           >
-            {profile?.tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'} PLAN
-          </Text>
-        </View>
-      </View>
-
-      {/* Profile Info */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Account Details</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Name</Text>
-          <Text style={styles.infoValue}>{profile?.name ?? '—'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoValue}>{profile?.email ?? '—'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Phone</Text>
-          <Text style={styles.infoValue}>{profile?.phone ?? '—'}</Text>
-        </View>
-      </View>
-
-      {/* Subscription */}
-      {subscription ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Subscription</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Plan</Text>
-            <Text style={styles.infoValue}>{subscription.plan}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status</Text>
-            <Text style={styles.infoValue}>{subscription.status}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Expires</Text>
-            <Text style={styles.infoValue}>
-              {new Date(subscription.expiresAt).toLocaleDateString()}
+            <Text
+              style={[
+                styles.tierBadgeText,
+                {
+                  color:
+                    profile?.tier === 'PREMIUM'
+                      ? Colors.tierPremium
+                      : Colors.tierFree,
+                },
+              ]}
+            >
+              {profile?.tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'} PLAN
             </Text>
           </View>
         </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Upgrade to Premium</Text>
-          <Text style={styles.upgradeText}>
-            Get priority queue placement, live doctor consultations, digital
-            prescriptions and more.
-          </Text>
-          <TouchableOpacity
-            style={[styles.upgradeButton, loadingUpgrade && styles.buttonDisabled]}
-            onPress={() => handleUpgrade('MONTHLY')}
-            disabled={loadingUpgrade}
-          >
-            {loadingUpgrade ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.upgradeButtonText}>Monthly Plan</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.upgradeButtonOutline, loadingUpgrade && styles.buttonDisabled]}
-            onPress={() => handleUpgrade('YEARLY')}
-            disabled={loadingUpgrade}
-          >
-            <Text style={styles.upgradeButtonOutlineText}>
-              Yearly Plan — Best Value
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Profile Info */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Account Details</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Name</Text>
+            <Text style={styles.infoValue}>{profile?.name ?? '—'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Email</Text>
+            <Text style={styles.infoValue}>{profile?.email ?? '—'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Phone</Text>
+            <Text style={styles.infoValue}>{profile?.phone ?? '—'}</Text>
+          </View>
+        </View>
+
+        {/* Subscription */}
+        {subscription ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Plan</Text>
+              <Text style={styles.infoValue}>{subscription.plan}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Status</Text>
+              <Text style={styles.infoValue}>{subscription.status}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Expires</Text>
+              <Text style={styles.infoValue}>
+                {new Date(subscription.expiresAt).toLocaleDateString()}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Upgrade to Premium</Text>
+            <Text style={styles.upgradeText}>
+              Get priority queue placement, live doctor consultations, digital
+              prescriptions and more.
+            </Text>
+            <TouchableOpacity
+              style={[styles.upgradeButton, loadingUpgrade && styles.buttonDisabled]}
+              onPress={() => handleUpgrade('MONTHLY')}
+              disabled={loadingUpgrade}
+            >
+              {loadingUpgrade ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.upgradeButtonText}>Monthly Plan</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.upgradeButtonOutline, loadingUpgrade && styles.buttonDisabled]}
+              onPress={() => handleUpgrade('YEARLY')}
+              disabled={loadingUpgrade}
+            >
+              <Text style={styles.upgradeButtonOutlineText}>
+                Yearly Plan — Best Value
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Logout */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -214,7 +217,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
   centered: {

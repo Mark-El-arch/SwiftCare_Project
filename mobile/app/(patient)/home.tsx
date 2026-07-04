@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -76,149 +77,151 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {patient?.name?.split(' ')[0]} 👋</Text>
-          <Text style={styles.subGreeting}>How are you feeling today?</Text>
-        </View>
-        <View style={[
-          styles.tierBadge,
-          { backgroundColor: patient?.tier === 'PREMIUM' ? Colors.tierPremiumBg : Colors.tierFreeBg }
-        ]}>
-          <Text style={[
-            styles.tierText,
-            { color: patient?.tier === 'PREMIUM' ? Colors.tierPremium : Colors.tierFree }
-          ]}>
-            {patient?.tier}
-          </Text>
-        </View>
-      </View>
-
-      {/* Queue Status */}
-      {queueStatus ? (
-        <View style={styles.queueCard}>
-          <View style={styles.queueCardHeader}>
-            <Text style={styles.queueCardTitle}>You're in Queue</Text>
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE</Text>
-            </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hello, {patient?.name?.split(' ')[0]} 👋</Text>
+            <Text style={styles.subGreeting}>How are you feeling today?</Text>
           </View>
-          <Text style={styles.queueDept}>{queueStatus.departmentName}</Text>
-          <Text style={styles.queuePosition}>{queueStatus.currentPosition}</Text>
-          <Text style={styles.queuePositionLabel}>Position in Queue</Text>
-          {queueStatus.currentPosition <= 2 && (
-            <Text style={styles.queueAlert}>
-              {queueStatus.currentPosition === 1
-                ? '🎉 You are next! Head to the hospital now.'
-                : '⏰ Almost your turn — start heading to the hospital.'}
+          <View style={[
+            styles.tierBadge,
+            { backgroundColor: patient?.tier === 'PREMIUM' ? Colors.tierPremiumBg : Colors.tierFreeBg }
+          ]}>
+            <Text style={[
+              styles.tierText,
+              { color: patient?.tier === 'PREMIUM' ? Colors.tierPremium : Colors.tierFree }
+            ]}>
+              {patient?.tier}
             </Text>
-          )}
-          <TouchableOpacity
-            style={styles.viewQueueButton}
-            onPress={() => router.push('/(patient)/queue')}
-          >
-            <Text style={styles.viewQueueButtonText}>View Queue Details</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      ) : (
-        <View style={styles.noQueueCard}>
-          <Text style={styles.noQueueText}>You are not in any queue</Text>
+
+        {/* Queue Status */}
+        {queueStatus ? (
+          <View style={styles.queueCard}>
+            <View style={styles.queueCardHeader}>
+              <Text style={styles.queueCardTitle}>You're in Queue</Text>
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>LIVE</Text>
+              </View>
+            </View>
+            <Text style={styles.queueDept}>{queueStatus.departmentName}</Text>
+            <Text style={styles.queuePosition}>{queueStatus.currentPosition}</Text>
+            <Text style={styles.queuePositionLabel}>Position in Queue</Text>
+            {queueStatus.currentPosition <= 2 && (
+              <Text style={styles.queueAlert}>
+                {queueStatus.currentPosition === 1
+                  ? '🎉 You are next! Head to the hospital now.'
+                  : '⏰ Almost your turn — start heading to the hospital.'}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={styles.viewQueueButton}
+              onPress={() => router.push('/(patient)/queue')}
+            >
+              <Text style={styles.viewQueueButtonText}>View Queue Details</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.noQueueCard}>
+            <Text style={styles.noQueueText}>You are not in any queue</Text>
+            <TouchableOpacity
+              style={styles.bookAptButton}
+              onPress={() => router.push('/(patient)/appointments')}
+            >
+              <Text style={styles.bookAptButtonText}>Book Appointment</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Upcoming Consultation */}
+        {upcomingConsultation && (
+          <View style={styles.consultationCard}>
+            <Text style={styles.cardSectionTitle}>Upcoming Consultation</Text>
+            <Text style={styles.consultationDoctor}>Dr. {upcomingConsultation.doctorName}</Text>
+            <Text style={styles.consultationTime}>
+              {new Date(upcomingConsultation.scheduledAt).toLocaleDateString('en-GB', {
+                weekday: 'short', day: 'numeric', month: 'short',
+                hour: '2-digit', minute: '2-digit'
+              })}
+            </Text>
+            <TouchableOpacity
+              style={styles.joinButton}
+              onPress={() => router.push('/(patient)/consultation')}
+            >
+              <Text style={styles.joinButtonText}>Go to Consultation</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Quick Actions */}
+        <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+        <View style={styles.quickActions}>
           <TouchableOpacity
-            style={styles.bookAptButton}
+            style={styles.actionCard}
+            onPress={() => router.push('/(patient)/symptoms')}
+          >
+            <Text style={styles.actionIcon}>🩺</Text>
+            <Text style={styles.actionLabel}>Check Symptoms</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionCard}
             onPress={() => router.push('/(patient)/appointments')}
           >
-            <Text style={styles.bookAptButtonText}>Book Appointment</Text>
+            <Text style={styles.actionIcon}>📅</Text>
+            <Text style={styles.actionLabel}>Appointments</Text>
           </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Upcoming Consultation */}
-      {upcomingConsultation && (
-        <View style={styles.consultationCard}>
-          <Text style={styles.cardSectionTitle}>Upcoming Consultation</Text>
-          <Text style={styles.consultationDoctor}>Dr. {upcomingConsultation.doctorName}</Text>
-          <Text style={styles.consultationTime}>
-            {new Date(upcomingConsultation.scheduledAt).toLocaleDateString('en-GB', {
-              weekday: 'short', day: 'numeric', month: 'short',
-              hour: '2-digit', minute: '2-digit'
-            })}
-          </Text>
           <TouchableOpacity
-            style={styles.joinButton}
+            style={styles.actionCard}
             onPress={() => router.push('/(patient)/consultation')}
           >
-            <Text style={styles.joinButtonText}>Go to Consultation</Text>
+            <Text style={styles.actionIcon}>👨‍⚕️</Text>
+            <Text style={styles.actionLabel}>Consult Doctor</Text>
           </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Quick Actions */}
-      <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-      <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(patient)/symptoms')}
-        >
-          <Text style={styles.actionIcon}>🩺</Text>
-          <Text style={styles.actionLabel}>Check Symptoms</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(patient)/appointments')}
-        >
-          <Text style={styles.actionIcon}>📅</Text>
-          <Text style={styles.actionLabel}>Appointments</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(patient)/consultation')}
-        >
-          <Text style={styles.actionIcon}>👨‍⚕️</Text>
-          <Text style={styles.actionLabel}>Consult Doctor</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => router.push('/(patient)/prescription')}
-        >
-          <Text style={styles.actionIcon}>💊</Text>
-          <Text style={styles.actionLabel}>Prescriptions</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Premium Upgrade Prompt */}
-      {patient?.tier === 'FREE' && (
-        <View style={styles.upgradeCard}>
-          <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
-          <Text style={styles.upgradeText}>
-            Get priority queue placement, live doctor consultations, and digital prescriptions.
-          </Text>
           <TouchableOpacity
-            style={styles.upgradeButton}
-            onPress={() => router.push('/(patient)/profile')}
+            style={styles.actionCard}
+            onPress={() => router.push('/(patient)/prescription')}
           >
-            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            <Text style={styles.actionIcon}>💊</Text>
+            <Text style={styles.actionLabel}>Prescriptions</Text>
           </TouchableOpacity>
         </View>
-      )}
-    </ScrollView>
+
+        {/* Premium Upgrade Prompt */}
+        {patient?.tier === 'FREE' && (
+          <View style={styles.upgradeCard}>
+            <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+            <Text style={styles.upgradeText}>
+              Get priority queue placement, live doctor consultations, and digital prescriptions.
+            </Text>
+            <TouchableOpacity
+              style={styles.upgradeButton}
+              onPress={() => router.push('/(patient)/profile')}
+            >
+              <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   greeting: { fontSize: 24, fontWeight: 'bold', color: Colors.textPrimary },

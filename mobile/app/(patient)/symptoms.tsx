@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SEVERITY_COLORS: Record<string, string> = {
   MILD: Colors.severityMild,
@@ -44,6 +46,8 @@ export default function SymptomsScreen() {
       const response = await api.post('/symptoms/submit', { symptoms });
       setResult(response.data);
 
+      await AsyncStorage.setItem('lastSeverityScore', String(response.data.severityScore));
+
       if (response.data.isEmergency) {
         Alert.alert(
           '🚨 EMERGENCY DETECTED',
@@ -63,80 +67,82 @@ export default function SymptomsScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Symptom Check</Text>
-      <Text style={styles.subtitle}>
-        Describe your symptoms and our AI will assess their severity to prioritise your care.
-      </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Symptom Check</Text>
+        <Text style={styles.subtitle}>
+          Describe your symptoms and our AI will assess their severity to prioritise your care.
+        </Text>
 
-      {!result ? (
-        <View style={styles.form}>
-          <Text style={styles.label}>What symptoms are you experiencing?</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="e.g. I have a severe headache, fever of 39°C, and difficulty breathing..."
-            placeholderTextColor={Colors.textDisabled}
-            value={symptoms}
-            onChangeText={setSymptoms}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>Assess Symptoms</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.resultContainer}>
-          {result.isEmergency && (
-            <View style={styles.emergencyBanner}>
-              <Text style={styles.emergencyText}>🚨 EMERGENCY — Seek immediate help</Text>
-            </View>
-          )}
-
-          <View style={[styles.severityCard, { backgroundColor: SEVERITY_BG[result.severityLabel] || Colors.primaryLight }]}>
-            <Text style={styles.severityTitle}>Severity Assessment</Text>
-            <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[result.severityLabel] || Colors.primary }]}>
-              <Text style={styles.severityBadgeText}>{result.severityLabel}</Text>
-            </View>
-            <Text style={styles.severityScore}>Score: {result.severityScore}/10</Text>
-          </View>
-
-          {result.isEmergency && result.firstAidContent ? (
-            <View style={styles.firstAidCard}>
-              <Text style={styles.firstAidTitle}>First Aid Instructions</Text>
-              <Text style={styles.firstAidText}>{result.firstAidContent}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.bookButton} onPress={handleBookAppointment}>
-              <Text style={styles.bookButtonText}>Book Appointment</Text>
-            </TouchableOpacity>
+        {!result ? (
+          <View style={styles.form}>
+            <Text style={styles.label}>What symptoms are you experiencing?</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="e.g. I have a severe headache, fever of 39°C, and difficulty breathing..."
+              placeholderTextColor={Colors.textDisabled}
+              value={symptoms}
+              onChangeText={setSymptoms}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+            />
 
             <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => { setResult(null); setSymptoms(''); }}
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
             >
-              <Text style={styles.retryButtonText}>Check Again</Text>
+              {loading ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Assess Symptoms</Text>
+              )}
             </TouchableOpacity>
           </View>
-        </View>
-      )}
-    </ScrollView>
+        ) : (
+          <View style={styles.resultContainer}>
+            {result.isEmergency && (
+              <View style={styles.emergencyBanner}>
+                <Text style={styles.emergencyText}>🚨 EMERGENCY — Seek immediate help</Text>
+              </View>
+            )}
+
+            <View style={[styles.severityCard, { backgroundColor: SEVERITY_BG[result.severityLabel] || Colors.primaryLight }]}>
+              <Text style={styles.severityTitle}>Severity Assessment</Text>
+              <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[result.severityLabel] || Colors.primary }]}>
+                <Text style={styles.severityBadgeText}>{result.severityLabel}</Text>
+              </View>
+              <Text style={styles.severityScore}>Score: {result.severityScore}/10</Text>
+            </View>
+
+            {result.isEmergency && result.firstAidContent ? (
+              <View style={styles.firstAidCard}>
+                <Text style={styles.firstAidTitle}>First Aid Instructions</Text>
+                <Text style={styles.firstAidText}>{result.firstAidContent}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={styles.bookButton} onPress={handleBookAppointment}>
+                <Text style={styles.bookButtonText}>Book Appointment</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => { setResult(null); setSymptoms(''); }}
+              >
+                <Text style={styles.retryButtonText}>Check Again</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

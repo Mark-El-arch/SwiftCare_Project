@@ -11,6 +11,7 @@ import {
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PrescriptionScreen() {
   const [consultations, setConsultations] = useState<any[]>([]);
@@ -68,113 +69,115 @@ export default function PrescriptionScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Prescriptions</Text>
-      <Text style={styles.subtitle}>
-        Present the QR code at any pharmacy to collect your medication.
-      </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Prescriptions</Text>
+        <Text style={styles.subtitle}>
+          Present the QR code at any pharmacy to collect your medication.
+        </Text>
 
-      {consultations.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>💊</Text>
-          <Text style={styles.emptyText}>No prescriptions yet</Text>
-          <Text style={styles.emptySubtext}>
-            Prescriptions appear here after a completed consultation
-          </Text>
-        </View>
-      ) : (
-        consultations.map(con => {
-          const presc = prescriptions[con.id];
-          if (!presc) return null;
+        {consultations.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>💊</Text>
+            <Text style={styles.emptyText}>No prescriptions yet</Text>
+            <Text style={styles.emptySubtext}>
+              Prescriptions appear here after a completed consultation
+            </Text>
+          </View>
+        ) : (
+          consultations.map(con => {
+            const presc = prescriptions[con.id];
+            if (!presc) return null;
 
-          const remainingDrugs = remaining[presc.id] || [];
-          const allDispensed = remainingDrugs.length === 0;
+            const remainingDrugs = remaining[presc.id] || [];
+            const allDispensed = remainingDrugs.length === 0;
 
-          return (
-            <View key={con.id} style={styles.prescriptionCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.doctorName}>Dr. {con.doctorName}</Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: allDispensed ? Colors.successLight : Colors.warningLight }
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    { color: allDispensed ? Colors.success : Colors.warning }
+            return (
+              <View key={con.id} style={styles.prescriptionCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.doctorName}>Dr. {con.doctorName}</Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: allDispensed ? Colors.successLight : Colors.warningLight }
                   ]}>
-                    {allDispensed ? 'Fully Dispensed' : 'Pending'}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.dateText}>
-                Issued: {new Date(presc.issuedAt).toLocaleDateString('en-GB', {
-                  day: 'numeric', month: 'short', year: 'numeric'
-                })}
-              </Text>
-
-              <View style={styles.drugsSection}>
-                <Text style={styles.drugsTitle}>Prescribed Drugs</Text>
-                {presc.drugs.map((drug: string, index: number) => {
-                  const isRemaining = remainingDrugs.some(
-                    (r: any) => r.drugName === drug
-                  );
-                  return (
-                    <View key={index} style={styles.drugRow}>
-                      <Text style={styles.drugName}>{drug}</Text>
-                      <View style={[
-                        styles.drugBadge,
-                        { backgroundColor: isRemaining ? Colors.warningLight : Colors.successLight }
-                      ]}>
-                        <Text style={[
-                          styles.drugBadgeText,
-                          { color: isRemaining ? Colors.warning : Colors.success }
-                        ]}>
-                          {isRemaining ? 'Pending' : 'Dispensed'}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-
-              <TouchableOpacity
-                style={styles.qrButton}
-                onPress={() => setExpandedQr(expandedQr === presc.id ? null : presc.id)}
-              >
-                <Text style={styles.qrButtonText}>
-                  {expandedQr === presc.id ? 'Hide QR Code' : 'Show QR Code'}
-                </Text>
-              </TouchableOpacity>
-
-              {expandedQr === presc.id && presc.qrCodeData && (
-                <View style={styles.qrContainer}>
-                  <Image
-                    source={{ uri: `data:image/png;base64,${presc.qrCodeData}` }}
-                    style={styles.qrImage}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.qrHint}>
-                    Present this QR code at any pharmacy
-                  </Text>
-                  {remainingDrugs.length > 0 && (
-                    <Text style={styles.remainingHint}>
-                      {remainingDrugs.length} drug(s) still pending collection
+                    <Text style={[
+                      styles.statusText,
+                      { color: allDispensed ? Colors.success : Colors.warning }
+                    ]}>
+                      {allDispensed ? 'Fully Dispensed' : 'Pending'}
                     </Text>
-                  )}
+                  </View>
                 </View>
-              )}
-            </View>
-          );
-        })
-      )}
-    </ScrollView>
+
+                <Text style={styles.dateText}>
+                  Issued: {new Date(presc.issuedAt).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                  })}
+                </Text>
+
+                <View style={styles.drugsSection}>
+                  <Text style={styles.drugsTitle}>Prescribed Drugs</Text>
+                  {presc.drugs.map((drug: string, index: number) => {
+                    const isRemaining = remainingDrugs.some(
+                      (r: any) => r.drugName === drug
+                    );
+                    return (
+                      <View key={index} style={styles.drugRow}>
+                        <Text style={styles.drugName}>{drug}</Text>
+                        <View style={[
+                          styles.drugBadge,
+                          { backgroundColor: isRemaining ? Colors.warningLight : Colors.successLight }
+                        ]}>
+                          <Text style={[
+                            styles.drugBadgeText,
+                            { color: isRemaining ? Colors.warning : Colors.success }
+                          ]}>
+                            {isRemaining ? 'Pending' : 'Dispensed'}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.qrButton}
+                  onPress={() => setExpandedQr(expandedQr === presc.id ? null : presc.id)}
+                >
+                  <Text style={styles.qrButtonText}>
+                    {expandedQr === presc.id ? 'Hide QR Code' : 'Show QR Code'}
+                  </Text>
+                </TouchableOpacity>
+
+                {expandedQr === presc.id && presc.qrCodeData && (
+                  <View style={styles.qrContainer}>
+                    <Image
+                      source={{ uri: `data:image/png;base64,${presc.qrCodeData}` }}
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.qrHint}>
+                      Present this QR code at any pharmacy
+                    </Text>
+                    {remainingDrugs.length > 0 && (
+                      <Text style={styles.remainingHint}>
+                        {remainingDrugs.length} drug(s) still pending collection
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 8 },
   subtitle: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21, marginBottom: 24 },

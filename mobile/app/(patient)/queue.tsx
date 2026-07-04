@@ -11,6 +11,7 @@ import {
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QueueScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -82,88 +83,90 @@ export default function QueueScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-      }
-    >
-      <Text style={styles.title}>Queue Tracker</Text>
-      <Text style={styles.subtitle}>Pull down to refresh your position</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+      >
+        <Text style={styles.title}>Queue Tracker</Text>
+        <Text style={styles.subtitle}>Pull down to refresh your position</Text>
 
-      {appointments.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🏥</Text>
-          <Text style={styles.emptyText}>You are not in any queue</Text>
-          <Text style={styles.emptySubtext}>Book an appointment to join a queue</Text>
-        </View>
-      ) : (
-        appointments.map(apt => {
-          const queue = queueStatuses[apt.id];
-          return (
-            <View key={apt.id} style={styles.queueCard}>
-              {queue?.isEmergency && (
-                <View style={styles.emergencyBanner}>
-                  <Text style={styles.emergencyText}>🚨 EMERGENCY — Priority Queue</Text>
+        {appointments.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>🏥</Text>
+            <Text style={styles.emptyText}>You are not in any queue</Text>
+            <Text style={styles.emptySubtext}>Book an appointment to join a queue</Text>
+          </View>
+        ) : (
+          appointments.map(apt => {
+            const queue = queueStatuses[apt.id];
+            return (
+              <View key={apt.id} style={styles.queueCard}>
+                {queue?.isEmergency && (
+                  <View style={styles.emergencyBanner}>
+                    <Text style={styles.emergencyText}>🚨 EMERGENCY — Priority Queue</Text>
+                  </View>
+                )}
+
+                <View style={styles.cardHeader}>
+                  <Text style={styles.deptName}>{apt.departmentName}</Text>
+                  <View style={styles.liveBadge}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveText}>LIVE</Text>
+                  </View>
                 </View>
-              )}
 
-              <View style={styles.cardHeader}>
-                <Text style={styles.deptName}>{apt.departmentName}</Text>
-                <View style={styles.liveBadge}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>LIVE</Text>
-                </View>
-              </View>
-
-              <View style={styles.positionContainer}>
-                <Text style={styles.positionNumber}>
-                  {queue?.currentPosition ?? '—'}
-                </Text>
-                <Text style={styles.positionLabel}>Position in Queue</Text>
-              </View>
-
-              {queue?.currentPosition === 1 && (
-                <View style={styles.nextBanner}>
-                  <Text style={styles.nextText}>🎉 You are next! Please proceed to the hospital.</Text>
-                </View>
-              )}
-
-              {queue?.currentPosition === 2 && (
-                <View style={styles.soonBanner}>
-                  <Text style={styles.soonText}>⏰ Almost your turn — head to the hospital soon.</Text>
-                </View>
-              )}
-
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Estimated Call Time</Text>
-                  <Text style={styles.metaValue}>
-                    {queue?.estimatedCallTime
-                      ? new Date(queue.estimatedCallTime).toLocaleTimeString('en-GB', {
-                          hour: '2-digit', minute: '2-digit'
-                        })
-                      : '—'}
+                <View style={styles.positionContainer}>
+                  <Text style={styles.positionNumber}>
+                    {queue?.currentPosition ?? '—'}
                   </Text>
+                  <Text style={styles.positionLabel}>Position in Queue</Text>
                 </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Severity Score</Text>
-                  <Text style={styles.metaValue}>{apt.severityScore}/10</Text>
-                </View>
-              </View>
 
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => handleCancel(apt.id)}
-              >
-                <Text style={styles.cancelButtonText}>Leave Queue</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })
-      )}
-    </ScrollView>
+                {queue?.currentPosition === 1 && (
+                  <View style={styles.nextBanner}>
+                    <Text style={styles.nextText}>🎉 You are next! Please proceed to the hospital.</Text>
+                  </View>
+                )}
+
+                {queue?.currentPosition === 2 && (
+                  <View style={styles.soonBanner}>
+                    <Text style={styles.soonText}>⏰ Almost your turn — head to the hospital soon.</Text>
+                  </View>
+                )}
+
+                <View style={styles.metaRow}>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Estimated Call Time</Text>
+                    <Text style={styles.metaValue}>
+                      {queue?.estimatedCallTime
+                        ? new Date(queue.estimatedCallTime).toLocaleTimeString('en-GB', {
+                            hour: '2-digit', minute: '2-digit'
+                          })
+                        : '—'}
+                    </Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Severity Score</Text>
+                    <Text style={styles.metaValue}>{apt.severityScore}/10</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancel(apt.id)}
+                >
+                  <Text style={styles.cancelButtonText}>Leave Queue</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -174,7 +177,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
   centered: {

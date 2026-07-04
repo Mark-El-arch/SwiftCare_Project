@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HealthProfileScreen() {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function HealthProfileScreen() {
         knownDiagnoses: parseList(knownDiagnoses),
       });
 
-      router.replace('/(patient)/profile');
+      router.replace('/(patient)/home');
     } catch (error: any) {
       const message =
         error.response?.data?.message || 'Failed to save health profile.';
@@ -48,81 +50,88 @@ export default function HealthProfileScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(patient)/profile');
+    router.replace('/(patient)/home');
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Health Profile</Text>
-      <Text style={styles.subtitle}>
-        Help us understand your health better. This information is used to
-        accurately assess your symptoms. You can update it anytime.
-      </Text>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>
-          Enter multiple items separated by commas. Leave blank if not applicable.
-        </Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Existing Conditions</Text>
-        <Text style={styles.hint}>e.g. Asthma, High Blood Pressure</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Enter conditions separated by commas"
-          placeholderTextColor={Colors.textDisabled}
-          value={conditions}
-          onChangeText={setConditions}
-          multiline
-          numberOfLines={3}
-        />
-
-        <Text style={styles.label}>Chronic Illnesses</Text>
-        <Text style={styles.hint}>e.g. Diabetes, Sickle Cell</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Enter chronic illnesses separated by commas"
-          placeholderTextColor={Colors.textDisabled}
-          value={chronicIllnesses}
-          onChangeText={setChronicIllnesses}
-          multiline
-          numberOfLines={3}
-        />
-
-        <Text style={styles.label}>Known Diagnoses</Text>
-        <Text style={styles.hint}>e.g. Hypertension, Arthritis</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Enter known diagnoses separated by commas"
-          placeholderTextColor={Colors.textDisabled}
-          value={knownDiagnoses}
-          onChangeText={setKnownDiagnoses}
-          multiline
-          numberOfLines={3}
-        />
-
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
         >
-          {loading ? (
-            <ActivityIndicator color={Colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Save Health Profile</Text>
-          )}
-        </TouchableOpacity>
+          <Text style={styles.title}>Health Profile</Text>
+          <Text style={styles.subtitle}>
+            Help us understand your health better. This information is used to
+            accurately assess your symptoms. You can update it anytime.
+          </Text>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip for now</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Enter multiple items separated by commas. Leave blank if not applicable.
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            <Text style={styles.label}>Existing Conditions</Text>
+            <Text style={styles.hint}>e.g. Asthma, High Blood Pressure</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Enter conditions separated by commas"
+              placeholderTextColor={Colors.textDisabled}
+              value={conditions}
+              onChangeText={setConditions}
+              multiline
+              numberOfLines={3}
+            />
+
+            <Text style={styles.label}>Chronic Illnesses</Text>
+            <Text style={styles.hint}>e.g. Diabetes, Sickle Cell</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Enter chronic illnesses separated by commas"
+              placeholderTextColor={Colors.textDisabled}
+              value={chronicIllnesses}
+              onChangeText={setChronicIllnesses}
+              multiline
+              numberOfLines={3}
+            />
+
+            <Text style={styles.label}>Known Diagnoses</Text>
+            <Text style={styles.hint}>e.g. Hypertension, Arthritis</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Enter known diagnoses separated by commas"
+              placeholderTextColor={Colors.textDisabled}
+              value={knownDiagnoses}
+              onChangeText={setKnownDiagnoses}
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Save Health Profile</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+              <Text style={styles.skipText}>Skip for now</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -133,7 +142,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 60,
   },
   title: {
     fontSize: 28,

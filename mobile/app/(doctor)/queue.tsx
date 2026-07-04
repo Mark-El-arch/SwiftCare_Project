@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SEVERITY_COLORS: Record<string, string> = {
   MILD: Colors.severityMild,
@@ -98,99 +99,101 @@ export default function DoctorQueueScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-      }
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Patient Queue</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.deptScroll}>
-        {departments.map(dept => (
-          <TouchableOpacity
-            key={dept.id}
-            style={[
-              styles.deptTab,
-              selectedDept === dept.id && styles.deptTabActive,
-            ]}
-            onPress={() => handleSelectDept(dept.id)}
-          >
-            <Text style={[
-              styles.deptTabText,
-              selectedDept === dept.id && styles.deptTabTextActive,
-            ]}>
-              {dept.name}
-            </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Patient Queue</Text>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={styles.queueHeader}>
-        <Text style={styles.queueCount}>{queue.length} patients in queue</Text>
-        <Text style={styles.queueHint}>Pull down to refresh</Text>
-      </View>
-
-      {queue.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>✅</Text>
-          <Text style={styles.emptyText}>Queue is empty</Text>
-          <Text style={styles.emptySubtext}>No pending patients in this department</Text>
         </View>
-      ) : (
-        queue.map((apt, index) => (
-          <View
-            key={apt.id}
-            style={[
-              styles.patientCard,
-              apt.isEmergency && styles.emergencyCard,
-            ]}
-          >
-            {apt.isEmergency && (
-              <View style={styles.emergencyBanner}>
-                <Text style={styles.emergencyText}>🚨 EMERGENCY</Text>
-              </View>
-            )}
-            <View style={styles.cardHeader}>
-              <View style={styles.positionBadge}>
-                <Text style={styles.positionText}>#{index + 1}</Text>
-              </View>
-              <View style={[
-                styles.severityBadge,
-                { backgroundColor: (SEVERITY_COLORS[apt.severityLabel] || Colors.primary) + '20' }
-              ]}>
-                <Text style={[
-                  styles.severityText,
-                  { color: SEVERITY_COLORS[apt.severityLabel] || Colors.primary }
-                ]}>
-                  Score: {apt.severityScore}/10
-                </Text>
-              </View>
-            </View>
 
-            <Text style={styles.patientId}>Patient ID: {apt.patientId}</Text>
-            <Text style={styles.scheduledTime}>
-              Scheduled: {new Date(apt.scheduledTime).toLocaleTimeString('en-GB', {
-                hour: '2-digit', minute: '2-digit'
-              })}
-            </Text>
-            <Text style={styles.queuePosition}>Queue Position: {apt.queuePosition}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.deptScroll}>
+          {departments.map(dept => (
+            <TouchableOpacity
+              key={dept.id}
+              style={[
+                styles.deptTab,
+                selectedDept === dept.id && styles.deptTabActive,
+              ]}
+              onPress={() => handleSelectDept(dept.id)}
+            >
+              <Text style={[
+                styles.deptTabText,
+                selectedDept === dept.id && styles.deptTabTextActive,
+              ]}>
+                {dept.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.queueHeader}>
+          <Text style={styles.queueCount}>{queue.length} patients in queue</Text>
+          <Text style={styles.queueHint}>Pull down to refresh</Text>
+        </View>
+
+        {queue.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>✅</Text>
+            <Text style={styles.emptyText}>Queue is empty</Text>
+            <Text style={styles.emptySubtext}>No pending patients in this department</Text>
           </View>
-        ))
-      )}
-    </ScrollView>
+        ) : (
+          queue.map((apt, index) => (
+            <View
+              key={apt.id}
+              style={[
+                styles.patientCard,
+                apt.isEmergency && styles.emergencyCard,
+              ]}
+            >
+              {apt.isEmergency && (
+                <View style={styles.emergencyBanner}>
+                  <Text style={styles.emergencyText}>🚨 EMERGENCY</Text>
+                </View>
+              )}
+              <View style={styles.cardHeader}>
+                <View style={styles.positionBadge}>
+                  <Text style={styles.positionText}>#{index + 1}</Text>
+                </View>
+                <View style={[
+                  styles.severityBadge,
+                  { backgroundColor: (SEVERITY_COLORS[apt.severityLabel] || Colors.primary) + '20' }
+                ]}>
+                  <Text style={[
+                    styles.severityText,
+                    { color: SEVERITY_COLORS[apt.severityLabel] || Colors.primary }
+                  ]}>
+                    Score: {apt.severityScore}/10
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.patientId}>Patient ID: {apt.patientId}</Text>
+              <Text style={styles.scheduledTime}>
+                Scheduled: {new Date(apt.scheduledTime).toLocaleTimeString('en-GB', {
+                  hour: '2-digit', minute: '2-digit'
+                })}
+              </Text>
+              <Text style={styles.queuePosition}>Queue Position: {apt.queuePosition}</Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary },

@@ -11,6 +11,7 @@ import {
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function StaffScreen() {
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -75,89 +76,91 @@ export default function StaffScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Staff Management</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(!showForm)}>
-          <Text style={styles.addButtonText}>{showForm ? 'Cancel' : '+ Add Doctor'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {showForm && (
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>New Doctor Account</Text>
-          {[
-            { label: 'Full Name', value: name, setter: setName, placeholder: 'Dr. Kwame Mensah' },
-            { label: 'Email', value: email, setter: setEmail, placeholder: 'doctor@hospital.com' },
-            { label: 'Password', value: password, setter: setPassword, placeholder: 'Secure password', secure: true },
-            { label: 'License Number', value: licenseNo, setter: setLicenseNo, placeholder: 'GH-MED-001' },
-          ].map(field => (
-            <View key={field.label}>
-              <Text style={styles.label}>{field.label}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={field.placeholder}
-                placeholderTextColor={Colors.textDisabled}
-                value={field.value}
-                onChangeText={field.setter}
-                secureTextEntry={field.secure}
-                autoCapitalize="none"
-              />
-            </View>
-          ))}
-
-          <Text style={styles.label}>Department</Text>
-          {departments.map(dept => (
-            <TouchableOpacity
-              key={dept.id}
-              style={[styles.deptOption, selectedDept === dept.id && styles.deptOptionSelected]}
-              onPress={() => setSelectedDept(dept.id)}
-            >
-              <Text style={[styles.deptOptionText, selectedDept === dept.id && styles.deptOptionTextSelected]}>
-                {dept.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-
-          <TouchableOpacity
-            style={[styles.createButton, submitting && styles.buttonDisabled]}
-            onPress={handleCreate}
-            disabled={submitting}
-          >
-            {submitting ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.createButtonText}>Create Doctor Account</Text>}
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Staff Management</Text>
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(!showForm)}>
+            <Text style={styles.addButtonText}>{showForm ? 'Cancel' : '+ Add Doctor'}</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      <Text style={styles.sectionTitle}>Doctors ({doctors.length})</Text>
-      {doctors.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No doctors yet</Text>
-          <Text style={styles.emptySubtext}>Add your first doctor above</Text>
-        </View>
-      ) : (
-        doctors.map(doctor => (
-          <View key={doctor.id} style={styles.doctorCard}>
-            <View style={styles.doctorHeader}>
-              <Text style={styles.doctorName}>Dr. {doctor.name}</Text>
-              <View style={[styles.availBadge, { backgroundColor: doctor.isAvailableOnline ? Colors.successLight : Colors.dangerLight }]}>
-                <Text style={[styles.availText, { color: doctor.isAvailableOnline ? Colors.success : Colors.danger }]}>
-                  {doctor.isAvailableOnline ? 'Online' : 'Offline'}
-                </Text>
+        {showForm && (
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>New Doctor Account</Text>
+            {[
+              { label: 'Full Name', value: name, setter: setName, placeholder: 'Dr. Kwame Mensah' },
+              { label: 'Email', value: email, setter: setEmail, placeholder: 'doctor@hospital.com' },
+              { label: 'Password', value: password, setter: setPassword, placeholder: 'Secure password', secure: true },
+              { label: 'License Number', value: licenseNo, setter: setLicenseNo, placeholder: 'GH-MED-001' },
+            ].map(field => (
+              <View key={field.label}>
+                <Text style={styles.label}>{field.label}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={field.placeholder}
+                  placeholderTextColor={Colors.textDisabled}
+                  value={field.value}
+                  onChangeText={field.setter}
+                  secureTextEntry={field.secure}
+                  autoCapitalize="none"
+                />
               </View>
-            </View>
-            <Text style={styles.doctorEmail}>{doctor.email}</Text>
-            <Text style={styles.doctorDept}>{doctor.departmentName}</Text>
+            ))}
+
+            <Text style={styles.label}>Department</Text>
+            {departments.map(dept => (
+              <TouchableOpacity
+                key={dept.id}
+                style={[styles.deptOption, selectedDept === dept.id && styles.deptOptionSelected]}
+                onPress={() => setSelectedDept(dept.id)}
+              >
+                <Text style={[styles.deptOptionText, selectedDept === dept.id && styles.deptOptionTextSelected]}>
+                  {dept.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={[styles.createButton, submitting && styles.buttonDisabled]}
+              onPress={handleCreate}
+              disabled={submitting}
+            >
+              {submitting ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.createButtonText}>Create Doctor Account</Text>}
+            </TouchableOpacity>
           </View>
-        ))
-      )}
-    </ScrollView>
+        )}
+
+        <Text style={styles.sectionTitle}>Doctors ({doctors.length})</Text>
+        {doctors.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No doctors yet</Text>
+            <Text style={styles.emptySubtext}>Add your first doctor above</Text>
+          </View>
+        ) : (
+          doctors.map(doctor => (
+            <View key={doctor.id} style={styles.doctorCard}>
+              <View style={styles.doctorHeader}>
+                <Text style={styles.doctorName}>Dr. {doctor.name}</Text>
+                <View style={[styles.availBadge, { backgroundColor: doctor.isAvailableOnline ? Colors.successLight : Colors.dangerLight }]}>
+                  <Text style={[styles.availText, { color: doctor.isAvailableOnline ? Colors.success : Colors.danger }]}>
+                    {doctor.isAvailableOnline ? 'Online' : 'Offline'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.doctorEmail}>{doctor.email}</Text>
+              <Text style={styles.doctorDept}>{doctor.departmentName}</Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary },
