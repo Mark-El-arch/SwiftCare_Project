@@ -6,13 +6,26 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
+
+const QUICK_ACTIONS = [
+  { icon: 'calendar-outline', label: 'Clinic\nRegistration', route: '/(patient)/appointments' },
+  { icon: 'person-outline', label: 'Doctor\nSchedule', route: '/(patient)/consultation' },
+  { icon: 'videocam-outline', label: 'Doctor\nAppointment', route: '/(patient)/consultation' },
+  { icon: 'list-outline', label: 'Clinics\nQueue', route: '/(patient)/queue' },
+  { icon: 'medkit-outline', label: 'Medicine\nSubmission', route: '/(patient)/symptoms' },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,10 +45,7 @@ export default function HomeScreen() {
 
       setPatient(patientRes.data);
 
-      const pendingApt = appointmentsRes.data.find(
-        (a: any) => a.status === 'PENDING'
-      );
-
+      const pendingApt = appointmentsRes.data.find((a: any) => a.status === 'PENDING');
       if (pendingApt) {
         try {
           const queueRes = await api.get(`/appointments/${pendingApt.id}/queue`);
@@ -47,9 +57,7 @@ export default function HomeScreen() {
         setQueueStatus(null);
       }
 
-      const upcoming = consultationsRes.data.find(
-        (c: any) => c.status === 'SCHEDULED'
-      );
+      const upcoming = consultationsRes.data.find((c: any) => c.status === 'SCHEDULED');
       setUpcomingConsultation(upcoming || null);
     } catch (error) {
       console.error('Failed to fetch home data');
@@ -59,14 +67,19 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
   }, []);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   if (loading) {
     return (
@@ -77,187 +90,202 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.white} />
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hello, {patient?.name?.split(' ')[0]} 👋</Text>
-            <Text style={styles.subGreeting}>How are you feeling today?</Text>
-          </View>
-          <View style={[
-            styles.tierBadge,
-            { backgroundColor: patient?.tier === 'PREMIUM' ? Colors.tierPremiumBg : Colors.tierFreeBg }
-          ]}>
-            <Text style={[
-              styles.tierText,
-              { color: patient?.tier === 'PREMIUM' ? Colors.tierPremium : Colors.tierFree }
-            ]}>
-              {patient?.tier}
-            </Text>
-          </View>
-        </View>
-
-        {/* Queue Status */}
-        {queueStatus ? (
-          <View style={styles.queueCard}>
-            <View style={styles.queueCardHeader}>
-              <Text style={styles.queueCardTitle}>You're in Queue</Text>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
-              </View>
+        <LinearGradient
+          colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.greeting}>{getGreeting()}, {patient?.name?.split(' ')[0]}</Text>
+              <Text style={styles.greetingSubtext}>Let us make you better</Text>
             </View>
-            <Text style={styles.queueDept}>{queueStatus.departmentName}</Text>
-            <Text style={styles.queuePosition}>{queueStatus.currentPosition}</Text>
-            <Text style={styles.queuePositionLabel}>Position in Queue</Text>
-            {queueStatus.currentPosition <= 2 && (
-              <Text style={styles.queueAlert}>
-                {queueStatus.currentPosition === 1
-                  ? '🎉 You are next! Head to the hospital now.'
-                  : '⏰ Almost your turn — start heading to the hospital.'}
-              </Text>
-            )}
+            <View style={styles.headerActions}>
+              <TouchableOpacity style={styles.headerIcon}>
+                <Ionicons name="notifications-outline" size={22} color={Colors.white} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIcon}>
+                <Ionicons name="help-circle-outline" size={22} color={Colors.white} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Active Queue Card */}
+          {queueStatus && (
             <TouchableOpacity
-              style={styles.viewQueueButton}
+              style={styles.activeQueueCard}
               onPress={() => router.push('/(patient)/queue')}
             >
-              <Text style={styles.viewQueueButtonText}>View Queue Details</Text>
+              <View style={styles.activeQueueLeft}>
+                <View style={styles.activeQueueIcon}>
+                  <Ionicons name="list-outline" size={20} color={Colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.activeQueueTitle}>{queueStatus.departmentName}</Text>
+                  <Text style={styles.activeQueueSub}>Current Queue {queueStatus.currentPosition} of 17</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
             </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.noQueueCard}>
-            <Text style={styles.noQueueText}>You are not in any queue</Text>
-            <TouchableOpacity
-              style={styles.bookAptButton}
-              onPress={() => router.push('/(patient)/appointments')}
-            >
-              <Text style={styles.bookAptButtonText}>Book Appointment</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          )}
 
-        {/* Upcoming Consultation */}
-        {upcomingConsultation && (
-          <View style={styles.consultationCard}>
-            <Text style={styles.cardSectionTitle}>Upcoming Consultation</Text>
-            <Text style={styles.consultationDoctor}>Dr. {upcomingConsultation.doctorName}</Text>
-            <Text style={styles.consultationTime}>
-              {new Date(upcomingConsultation.scheduledAt).toLocaleDateString('en-GB', {
-                weekday: 'short', day: 'numeric', month: 'short',
-                hour: '2-digit', minute: '2-digit'
-              })}
-            </Text>
+          {/* Queue Number */}
+          {queueStatus && (
+            <View style={styles.queueNumberCard}>
+              <Text style={styles.queueNumberLabel}>Queue {queueStatus.currentPosition}</Text>
+              <Text style={styles.queueNumberSub}>
+                Your turn at {queueStatus.estimatedCallTime
+                  ? new Date(queueStatus.estimatedCallTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                  : '--:--'}
+              </Text>
+            </View>
+          )}
+        </LinearGradient>
+
+        <View style={styles.body}>
+          {/* Search Bar */}
+          <TouchableOpacity style={styles.searchBar}>
+            <Ionicons name="search-outline" size={18} color={Colors.textDisabled} />
+            <Text style={styles.searchText}>Search doctor or clinic</Text>
+          </TouchableOpacity>
+
+          {/* Upcoming Consultation Banner */}
+          {upcomingConsultation && (
             <TouchableOpacity
-              style={styles.joinButton}
+              style={styles.upcomingBanner}
               onPress={() => router.push('/(patient)/consultation')}
             >
-              <Text style={styles.joinButtonText}>Go to Consultation</Text>
+              <Ionicons name="notifications-outline" size={16} color={Colors.primary} />
+              <Text style={styles.upcomingText}>Your next medical checkup</Text>
+              <View style={styles.upcomingBadge}>
+                <Text style={styles.upcomingBadgeText}>Tomorrow</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsRow}>
+            {QUICK_ACTIONS.map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.quickAction}
+                onPress={() => router.push(action.route as any)}
+              >
+                <View style={styles.quickActionIcon}>
+                  <Ionicons name={action.icon as any} size={24} color={Colors.primary} />
+                </View>
+                <Text style={styles.quickActionLabel}>{action.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Hospital Clinics */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Hospital Clinics</Text>
+            <TouchableOpacity onPress={() => router.push('/(patient)/appointments')}>
+              <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* Quick Actions */}
-        <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/(patient)/symptoms')}
-          >
-            <Text style={styles.actionIcon}>🩺</Text>
-            <Text style={styles.actionLabel}>Check Symptoms</Text>
-          </TouchableOpacity>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clinicsRow}>
+            {[
+              { name: 'Orthopedic', icon: 'body-outline' },
+              { name: 'Neuron', icon: 'flash-outline' },
+              { name: 'ENT', icon: 'ear-outline' },
+              { name: 'Cardiology', icon: 'heart-outline' },
+              { name: 'Children', icon: 'happy-outline' },
+              { name: 'Eye', icon: 'eye-outline' },
+            ].map((clinic, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.clinicCard}
+                onPress={() => router.push('/(patient)/appointments')}
+              >
+                <View style={styles.clinicIcon}>
+                  <Ionicons name={clinic.icon as any} size={28} color={Colors.primary} />
+                </View>
+                <Text style={styles.clinicName}>{clinic.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/(patient)/appointments')}
-          >
-            <Text style={styles.actionIcon}>📅</Text>
-            <Text style={styles.actionLabel}>Appointments</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/(patient)/consultation')}
-          >
-            <Text style={styles.actionIcon}>👨‍⚕️</Text>
-            <Text style={styles.actionLabel}>Consult Doctor</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/(patient)/prescription')}
-          >
-            <Text style={styles.actionIcon}>💊</Text>
-            <Text style={styles.actionLabel}>Prescriptions</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Premium Upgrade Prompt */}
-        {patient?.tier === 'FREE' && (
-          <View style={styles.upgradeCard}>
-            <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
-            <Text style={styles.upgradeText}>
-              Get priority queue placement, live doctor consultations, and digital prescriptions.
-            </Text>
+          {/* Premium Upgrade */}
+          {patient?.tier === 'FREE' && (
             <TouchableOpacity
-              style={styles.upgradeButton}
+              style={styles.upgradeCard}
               onPress={() => router.push('/(patient)/profile')}
             >
-              <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+              <LinearGradient
+                colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+                style={styles.upgradeGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <View style={styles.upgradeContent}>
+                  <Ionicons name="star-outline" size={24} color={Colors.white} />
+                  <View style={styles.upgradeText}>
+                    <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+                    <Text style={styles.upgradeSubtext}>Get priority queue & live consultations</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.white} />
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
-        )}
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  greeting: { fontSize: 24, fontWeight: 'bold', color: Colors.textPrimary },
-  subGreeting: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-  tierBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  tierText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
-  queueCard: { backgroundColor: Colors.primary, borderRadius: 16, padding: 20, marginBottom: 16 },
-  queueCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  queueCardTitle: { fontSize: 14, color: Colors.white, opacity: 0.8 },
-  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.white },
-  liveText: { fontSize: 10, fontWeight: '700', color: Colors.white },
-  queueDept: { fontSize: 13, color: Colors.white, opacity: 0.7, marginBottom: 8 },
-  queuePosition: { fontSize: 64, fontWeight: '800', color: Colors.white, lineHeight: 72 },
-  queuePositionLabel: { fontSize: 13, color: Colors.white, opacity: 0.7, marginBottom: 8 },
-  queueAlert: { fontSize: 13, color: Colors.white, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 10, marginBottom: 12, textAlign: 'center' },
-  viewQueueButton: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  viewQueueButtonText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
-  noQueueCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 16, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  noQueueText: { fontSize: 14, color: Colors.textSecondary, marginBottom: 14 },
-  bookAptButton: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center' },
-  bookAptButtonText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
-  consultationCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
-  cardSectionTitle: { fontSize: 12, color: Colors.textDisabled, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  consultationDoctor: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  consultationTime: { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
-  joinButton: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  joinButtonText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
-  quickActionsTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
-  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  actionCard: { backgroundColor: Colors.surface, borderRadius: 14, padding: 16, alignItems: 'center', width: '47%', borderWidth: 1, borderColor: Colors.border },
-  actionIcon: { fontSize: 28, marginBottom: 8 },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, textAlign: 'center' },
-  upgradeCard: { backgroundColor: Colors.primaryLight, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: Colors.primary + '40' },
-  upgradeTitle: { fontSize: 16, fontWeight: '700', color: Colors.primary, marginBottom: 8 },
-  upgradeText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 14 },
-  upgradeButton: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  upgradeButtonText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  greeting: { fontSize: 22, fontWeight: '700', color: Colors.white },
+  greetingSubtext: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  headerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  activeQueueCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  activeQueueLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  activeQueueIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  activeQueueTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  activeQueueSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  queueNumberCard: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: 16 },
+  queueNumberLabel: { fontSize: 20, fontWeight: '700', color: Colors.white },
+  queueNumberSub: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  body: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  searchText: { fontSize: 14, color: Colors.textDisabled },
+  upcomingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.primaryLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 20 },
+  upcomingText: { flex: 1, fontSize: 13, color: Colors.primary, fontWeight: '500' },
+  upcomingBadge: { backgroundColor: Colors.primary, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  upcomingBadgeText: { fontSize: 11, color: Colors.white, fontWeight: '600' },
+  quickActionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
+  quickAction: { alignItems: 'center', width: (width - 40) / 5 },
+  quickActionIcon: { width: 52, height: 52, borderRadius: 14, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  quickActionLabel: { fontSize: 10, color: Colors.textSecondary, textAlign: 'center', lineHeight: 14 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  seeAll: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
+  clinicsRow: { marginBottom: 24 },
+  clinicCard: { alignItems: 'center', marginRight: 16, width: 72 },
+  clinicIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  clinicName: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center' },
+  upgradeCard: { borderRadius: 16, overflow: 'hidden' },
+  upgradeGradient: { padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  upgradeContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  upgradeText: {},
+  upgradeTitle: { fontSize: 15, fontWeight: '700', color: Colors.white },
+  upgradeSubtext: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
 });

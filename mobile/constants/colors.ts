@@ -1,25 +1,30 @@
 export const Colors = {
-  // Primary
-  primary: '#1D9E75',
-  primaryDark: '#158A62',
-  primaryLight: '#E8F8F3',
-  primaryMuted: '#A8DDC9',
+  // Primary Teal
+  primary: '#0B8FAC',
+  primaryDark: '#0A7A94',
+  primaryLight: '#E8F6F9',
+  primaryMuted: '#7ECFDE',
+
+  // Header
+  headerDark: '#0D4C5C',
+  headerGradientStart: '#0D4C5C',
+  headerGradientEnd: '#0B8FAC',
 
   // Neutrals
   white: '#FFFFFF',
   black: '#000000',
-  textPrimary: '#1A1A1A',
-  textSecondary: '#666666',
-  textDisabled: '#AAAAAA',
-  border: '#E0E0E0',
-  borderStrong: '#CCCCCC',
-  background: '#F5F7FA',
+  textPrimary: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textDisabled: '#9CA3AF',
+  border: '#E5E7EB',
+  borderStrong: '#D1D5DB',
+  background: '#F2F6F8',
   surface: '#FFFFFF',
-  surfaceSecondary: '#F0F4F2',
+  surfaceSecondary: '#F8FAFC',
 
   // Semantic
-  success: '#1D9E75',
-  successLight: '#E8F8F3',
+  success: '#10B981',
+  successLight: '#D1FAE5',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
   danger: '#EF4444',
@@ -28,8 +33,8 @@ export const Colors = {
   infoLight: '#EFF6FF',
 
   // Severity
-  severityMild: '#1D9E75',
-  severityMildBg: '#E8F8F3',
+  severityMild: '#10B981',
+  severityMildBg: '#D1FAE5',
   severityModerate: '#F59E0B',
   severityModerateBg: '#FEF3C7',
   severitySevere: '#EF4444',
@@ -38,19 +43,19 @@ export const Colors = {
   severityCriticalBg: '#B91C1C',
 
   // Subscription Tiers
-  tierFree: '#666666',
-  tierFreeBg: '#F0F0F0',
-  tierPremium: '#1D9E75',
-  tierPremiumBg: '#E8F8F3',
+  tierFree: '#6B7280',
+  tierFreeBg: '#F3F4F6',
+  tierPremium: '#0B8FAC',
+  tierPremiumBg: '#E8F6F9',
 
   // Dark Theme
   dark: {
-    background: '#0F1A16',
-    surface: '#1A2E25',
-    surfaceSecondary: '#1F3A2E',
+    background: '#0A1628',
+    surface: '#0D2137',
+    surfaceSecondary: '#102840',
     textPrimary: '#F5F5F5',
-    textSecondary: '#A0A0A0',
-    border: '#2A4035',
-    borderStrong: '#3A5548',
+    textSecondary: '#9CA3AF',
+    border: '#1E3A4C',
+    borderStrong: '#2A5068',
   },
 };

@@ -5,13 +5,15 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QueueScreen() {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -83,7 +85,15 @@ export default function QueueScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Queue Details</Text>
+        <Text style={styles.headerSubtitle}>Pull down to refresh your position</Text>
+      </LinearGradient>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -91,12 +101,11 @@ export default function QueueScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
       >
-        <Text style={styles.title}>Queue Tracker</Text>
-        <Text style={styles.subtitle}>Pull down to refresh your position</Text>
-
         {appointments.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🏥</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="list-outline" size={48} color={Colors.primary} />
+            </View>
             <Text style={styles.emptyText}>You are not in any queue</Text>
             <Text style={styles.emptySubtext}>Book an appointment to join a queue</Text>
           </View>
@@ -105,61 +114,95 @@ export default function QueueScreen() {
             const queue = queueStatuses[apt.id];
             return (
               <View key={apt.id} style={styles.queueCard}>
+                {/* Clinic Info */}
+                <View style={styles.clinicRow}>
+                  <View style={styles.clinicIconBox}>
+                    <Ionicons name="business-outline" size={20} color={Colors.primary} />
+                  </View>
+                  <View>
+                    <Text style={styles.clinicName}>{apt.departmentName}</Text>
+                    <Text style={styles.registrationTime}>
+                      Registration time {new Date(apt.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Queue Number */}
+                <View style={styles.queueNumberSection}>
+                  <Text style={styles.queueLabel}>Queue {queue?.currentPosition ?? '—'}</Text>
+                  <Text style={styles.queueSub}>
+                    Current Queue {queue?.currentPosition ?? '—'} of 17
+                  </Text>
+                </View>
+
+                {/* Estimated Time */}
+                <LinearGradient
+                  colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+                  style={styles.timeCard}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="time-outline" size={18} color={Colors.white} />
+                  <Text style={styles.timeLabel}>Your Turn at:</Text>
+                  <Text style={styles.timeValue}>
+                    {queue?.estimatedCallTime
+                      ? new Date(queue.estimatedCallTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                      : '--:--'}
+                  </Text>
+                </LinearGradient>
+
+                {/* Emergency Banner */}
                 {queue?.isEmergency && (
                   <View style={styles.emergencyBanner}>
+                    <Ionicons name="warning-outline" size={16} color={Colors.white} />
                     <Text style={styles.emergencyText}>🚨 EMERGENCY — Priority Queue</Text>
                   </View>
                 )}
 
-                <View style={styles.cardHeader}>
-                  <Text style={styles.deptName}>{apt.departmentName}</Text>
-                  <View style={styles.liveBadge}>
-                    <View style={styles.liveDot} />
-                    <Text style={styles.liveText}>LIVE</Text>
-                  </View>
-                </View>
-
-                <View style={styles.positionContainer}>
-                  <Text style={styles.positionNumber}>
-                    {queue?.currentPosition ?? '—'}
-                  </Text>
-                  <Text style={styles.positionLabel}>Position in Queue</Text>
-                </View>
-
+                {/* Alert messages */}
                 {queue?.currentPosition === 1 && (
-                  <View style={styles.nextBanner}>
-                    <Text style={styles.nextText}>🎉 You are next! Please proceed to the hospital.</Text>
+                  <View style={styles.alertBanner}>
+                    <Text style={styles.alertText}>🎉 You are next! Please proceed to the hospital.</Text>
                   </View>
                 )}
-
                 {queue?.currentPosition === 2 && (
-                  <View style={styles.soonBanner}>
-                    <Text style={styles.soonText}>⏰ Almost your turn — head to the hospital soon.</Text>
+                  <View style={[styles.alertBanner, { backgroundColor: Colors.warningLight }]}>
+                    <Text style={[styles.alertText, { color: Colors.warning }]}>⏰ Almost your turn — head to the hospital soon.</Text>
                   </View>
                 )}
 
+                {/* QR Code hint */}
+                <View style={styles.qrHintBox}>
+                  <Ionicons name="qr-code-outline" size={14} color={Colors.textSecondary} />
+                  <Text style={styles.qrHintText}>
+                    Scan this QR code at the clinic administration when your name is called and your queue number appears.
+                  </Text>
+                </View>
+
+                {/* Meta */}
                 <View style={styles.metaRow}>
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Estimated Call Time</Text>
-                    <Text style={styles.metaValue}>
-                      {queue?.estimatedCallTime
-                        ? new Date(queue.estimatedCallTime).toLocaleTimeString('en-GB', {
-                            hour: '2-digit', minute: '2-digit'
-                          })
-                        : '—'}
-                    </Text>
+                    <Text style={styles.metaLabel}>Patient Name</Text>
+                    <Text style={styles.metaValue}>You</Text>
                   </View>
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Severity Score</Text>
-                    <Text style={styles.metaValue}>{apt.severityScore}/10</Text>
+                    <Text style={styles.metaLabel}>Queue Number</Text>
+                    <Text style={styles.metaValue}>{queue?.currentPosition ?? '—'}</Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Text style={styles.metaLabel}>Reservation Date</Text>
+                    <Text style={styles.metaValue}>
+                      {new Date(apt.scheduledTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                    </Text>
                   </View>
                 </View>
 
+                {/* Leave Queue */}
                 <TouchableOpacity
-                  style={styles.cancelButton}
+                  style={styles.leaveButton}
                   onPress={() => handleCancel(apt.id)}
                 >
-                  <Text style={styles.cancelButtonText}>Leave Queue</Text>
+                  <Text style={styles.leaveButtonText}>Leave Queue</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -171,174 +214,38 @@ export default function QueueScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textDisabled,
-    marginBottom: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    fontSize: 13,
-    color: Colors.textDisabled,
-  },
-  queueCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  emergencyBanner: {
-    backgroundColor: Colors.severityCriticalBg,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 14,
-    alignItems: 'center',
-  },
-  emergencyText: {
-    color: Colors.white,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  deptName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: Colors.successLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.success,
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.success,
-  },
-  positionContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  positionNumber: {
-    fontSize: 72,
-    fontWeight: '800',
-    color: Colors.primary,
-    lineHeight: 80,
-  },
-  positionLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  nextBanner: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  nextText: {
-    color: Colors.primary,
-    fontWeight: '600',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  soonBanner: {
-    backgroundColor: Colors.warningLight,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  soonText: {
-    color: Colors.warning,
-    fontWeight: '600',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: 16,
-    marginBottom: 16,
-  },
-  metaItem: {
-    alignItems: 'center',
-  },
-  metaLabel: {
-    fontSize: 11,
-    color: Colors.textDisabled,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  metaValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  cancelButton: {
-    borderWidth: 1.5,
-    borderColor: Colors.danger,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: Colors.danger,
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: 20, paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: Colors.white },
+  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  emptyState: { alignItems: 'center', paddingVertical: 80 },
+  emptyIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyText: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary, marginBottom: 4 },
+  emptySubtext: { fontSize: 13, color: Colors.textDisabled },
+  queueCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  clinicIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  clinicName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  registrationTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  queueNumberSection: { marginBottom: 14 },
+  queueLabel: { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  queueSub: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  timeCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 14, marginBottom: 14 },
+  timeLabel: { flex: 1, fontSize: 14, color: Colors.white, fontWeight: '500' },
+  timeValue: { fontSize: 16, fontWeight: '700', color: Colors.white },
+  emergencyBanner: { backgroundColor: Colors.severityCriticalBg, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  emergencyText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
+  alertBanner: { backgroundColor: Colors.primaryLight, borderRadius: 10, padding: 10, marginBottom: 10 },
+  alertText: { color: Colors.primary, fontSize: 13, fontWeight: '500', textAlign: 'center' },
+  qrHintBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: Colors.surfaceSecondary, borderRadius: 10, padding: 12, marginBottom: 14 },
+  qrHintText: { flex: 1, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 14, marginBottom: 14 },
+  metaItem: { alignItems: 'center' },
+  metaLabel: { fontSize: 11, color: Colors.textDisabled, marginBottom: 4 },
+  metaValue: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  leaveButton: { borderWidth: 1.5, borderColor: Colors.danger, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  leaveButtonText: { color: Colors.danger, fontSize: 14, fontWeight: '600' },
 });
