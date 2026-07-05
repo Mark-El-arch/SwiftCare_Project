@@ -5,29 +5,28 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Image,
 } from 'react-native';
 import { useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PrescriptionScreen() {
-  //const [consultations, setConsultations] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [remaining, setRemaining] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [expandedQr, setExpandedQr] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const prescriptionsRes = await api.get('/prescriptions/my');
-      const prescList = prescriptionsRes.data;
+      const prescRes = await api.get('/prescriptions/my');
+      const prescList = prescRes.data;
+      setPrescriptions(prescList);
 
       const remainingMap: Record<string, any[]> = {};
       await Promise.all(
@@ -40,8 +39,6 @@ export default function PrescriptionScreen() {
           }
         })
       );
-
-      setPrescriptions(prescList);
       setRemaining(remainingMap);
     } catch (error) {
       console.error('Failed to fetch prescriptions');
@@ -59,30 +56,48 @@ export default function PrescriptionScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Prescriptions</Text>
-        <Text style={styles.subtitle}>
-          Present the QR code at any pharmacy to collect your medication.
-        </Text>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Prescriptions</Text>
+        <Text style={styles.headerSubtitle}>Present QR code at any pharmacy</Text>
+      </LinearGradient>
 
-        {Object.keys(prescriptions).length === 0 ? (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {prescriptions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>💊</Text>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="document-text-outline" size={36} color={Colors.primary} />
+            </View>
             <Text style={styles.emptyText}>No prescriptions yet</Text>
             <Text style={styles.emptySubtext}>
               Prescriptions appear here after a completed consultation
             </Text>
           </View>
         ) : (
-          (prescriptions as any[]).map((presc: any) => {
+          prescriptions.map(presc => {
             const remainingDrugs = remaining[presc.id] || [];
             const allDispensed = remainingDrugs.length === 0;
 
             return (
               <View key={presc.id} style={styles.prescriptionCard}>
+                {/* Header */}
                 <View style={styles.cardHeader}>
-                  <Text style={styles.doctorName}>Prescription</Text>
+                  <View style={styles.rxBadge}>
+                    <Text style={styles.rxText}>Rx</Text>
+                  </View>
+                  <View style={styles.cardInfo}>
+                    <Text style={styles.prescId}>
+                      #{presc.id.slice(0, 8).toUpperCase()}
+                    </Text>
+                    <Text style={styles.prescDate}>
+                      {new Date(presc.issuedAt).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
+                    </Text>
+                  </View>
                   <View style={[
                     styles.statusBadge,
                     { backgroundColor: allDispensed ? Colors.successLight : Colors.warningLight }
@@ -91,26 +106,26 @@ export default function PrescriptionScreen() {
                       styles.statusText,
                       { color: allDispensed ? Colors.success : Colors.warning }
                     ]}>
-                      {allDispensed ? 'Fully Dispensed' : 'Pending'}
+                      {allDispensed ? 'Complete' : 'Pending'}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={styles.dateText}>
-                  Issued: {new Date(presc.issuedAt).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'short', year: 'numeric'
-                  })}
-                </Text>
-
+                {/* Drugs */}
                 <View style={styles.drugsSection}>
                   <Text style={styles.drugsTitle}>Prescribed Drugs</Text>
                   {presc.drugs.map((drug: string, index: number) => {
-                    const isRemaining = remainingDrugs.some(
-                      (r: any) => r.drugName === drug
-                    );
+                    const isRemaining = remainingDrugs.some((r: any) => r.drugName === drug);
                     return (
                       <View key={index} style={styles.drugRow}>
-                        <Text style={styles.drugName}>{drug}</Text>
+                        <View style={styles.drugLeft}>
+                          <Ionicons
+                            name={isRemaining ? 'ellipse-outline' : 'checkmark-circle'}
+                            size={18}
+                            color={isRemaining ? Colors.textDisabled : Colors.success}
+                          />
+                          <Text style={styles.drugName}>{drug}</Text>
+                        </View>
                         <View style={[
                           styles.drugBadge,
                           { backgroundColor: isRemaining ? Colors.warningLight : Colors.successLight }
@@ -127,13 +142,31 @@ export default function PrescriptionScreen() {
                   })}
                 </View>
 
+                {/* QR Code */}
                 <TouchableOpacity
                   style={styles.qrButton}
                   onPress={() => setExpandedQr(expandedQr === presc.id ? null : presc.id)}
                 >
-                  <Text style={styles.qrButtonText}>
-                    {expandedQr === presc.id ? 'Hide QR Code' : 'Show QR Code'}
-                  </Text>
+                  <LinearGradient
+                    colors={expandedQr === presc.id
+                      ? [Colors.headerGradientStart, Colors.headerGradientEnd]
+                      : [Colors.primaryLight, Colors.primaryLight]}
+                    style={styles.qrButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Ionicons
+                      name="qr-code-outline"
+                      size={18}
+                      color={expandedQr === presc.id ? Colors.white : Colors.primary}
+                    />
+                    <Text style={[
+                      styles.qrButtonText,
+                      { color: expandedQr === presc.id ? Colors.white : Colors.primary }
+                    ]}>
+                      {expandedQr === presc.id ? 'Hide QR Code' : 'Show QR Code'}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
 
                 {expandedQr === presc.id && presc.qrCodeData && (
@@ -143,13 +176,14 @@ export default function PrescriptionScreen() {
                       style={styles.qrImage}
                       resizeMode="contain"
                     />
-                    <Text style={styles.qrHint}>
-                      Present this QR code at any pharmacy
-                    </Text>
+                    <Text style={styles.qrHint}>Present at any pharmacy to collect medication</Text>
                     {remainingDrugs.length > 0 && (
-                      <Text style={styles.remainingHint}>
-                        {remainingDrugs.length} drug(s) still pending collection
-                      </Text>
+                      <View style={styles.remainingHint}>
+                        <Ionicons name="information-circle-outline" size={14} color={Colors.warning} />
+                        <Text style={styles.remainingHintText}>
+                          {remainingDrugs.length} drug(s) still pending collection
+                        </Text>
+                      </View>
                     )}
                   </View>
                 )}
@@ -163,31 +197,39 @@ export default function PrescriptionScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21, marginBottom: 24 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: Colors.white },
+  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  emptyState: { alignItems: 'center', paddingVertical: 80 },
+  emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   emptyText: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary, marginBottom: 4 },
   emptySubtext: { fontSize: 13, color: Colors.textDisabled, textAlign: 'center', paddingHorizontal: 20 },
-  prescriptionCard: { backgroundColor: Colors.surface, borderRadius: 14, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  doctorName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  prescriptionCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  rxBadge: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  rxText: { fontSize: 16, fontWeight: '800', color: Colors.primary, fontStyle: 'italic' },
+  cardInfo: { flex: 1 },
+  prescId: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  prescDate: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusText: { fontSize: 12, fontWeight: '600' },
-  dateText: { fontSize: 13, color: Colors.textSecondary, marginBottom: 16 },
   drugsSection: { marginBottom: 16 },
-  drugsTitle: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  drugRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  drugsTitle: { fontSize: 12, fontWeight: '600', color: Colors.textDisabled, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  drugRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  drugLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   drugName: { fontSize: 14, color: Colors.textPrimary },
   drugBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
   drugBadgeText: { fontSize: 11, fontWeight: '600' },
-  qrButton: { backgroundColor: Colors.primaryLight, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  qrButtonText: { color: Colors.primary, fontSize: 14, fontWeight: '700' },
+  qrButton: { borderRadius: 12, overflow: 'hidden' },
+  qrButtonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12 },
+  qrButtonText: { fontSize: 14, fontWeight: '700' },
   qrContainer: { alignItems: 'center', paddingTop: 16 },
   qrImage: { width: 220, height: 220, marginBottom: 12 },
   qrHint: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center' },
-  remainingHint: { fontSize: 12, color: Colors.warning, marginTop: 6, textAlign: 'center' },
+  remainingHint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  remainingHintText: { fontSize: 12, color: Colors.warning },
 });

@@ -9,29 +9,17 @@ import {
 } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface PatientProfile {
-  name: string;
-  email: string;
-  phone: string;
-  tier: 'FREE' | 'PREMIUM';
-}
-
-interface Subscription {
-  plan: string;
-  status: string;
-  expiresAt: string;
-}
 
 export default function ProfileScreen() {
   const router = useRouter();
-
-  const [profile, setProfile] = useState<PatientProfile | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
@@ -45,7 +33,7 @@ export default function ProfileScreen() {
       const response = await api.get('/patients/me');
       setProfile(response.data);
     } catch (error) {
-      // handle error
+      console.error('Failed to fetch profile');
     } finally {
       setLoadingProfile(false);
     }
@@ -55,8 +43,8 @@ export default function ProfileScreen() {
     try {
       const response = await api.get('/subscriptions/status');
       setSubscription(response.data);
-    } catch (error) {
-      // no subscription yet
+    } catch {
+      // no subscription
     }
   };
 
@@ -66,14 +54,12 @@ export default function ProfileScreen() {
       const response = await api.post('/subscriptions/upgrade', { plan });
       const { paymentUrl } = response.data;
       Alert.alert(
-        'Upgrade to Premium',
-        `Open this link to complete payment:\n\n${paymentUrl}`,
+        'Complete Payment',
+        `Open this link to complete your upgrade:\n\n${paymentUrl}`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {
-      const message =
-        error.response?.data?.message || 'Failed to initiate upgrade.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to initiate upgrade.');
     } finally {
       setLoadingUpgrade(false);
     }
@@ -101,226 +87,157 @@ export default function ProfileScreen() {
     );
   }
 
+  const isPremium = profile?.tier === 'PREMIUM';
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>My Profile</Text>
 
-        {/* Tier Badge */}
-        <View style={styles.tierBadgeRow}>
-          <View
-            style={[
+        {/* Profile Header */}
+        <LinearGradient
+          colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+          style={styles.profileHeader}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {profile?.name?.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={[
               styles.tierBadge,
-              {
-                backgroundColor:
-                  profile?.tier === 'PREMIUM'
-                    ? Colors.tierPremiumBg
-                    : Colors.tierFreeBg,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.tierBadgeText,
-                {
-                  color:
-                    profile?.tier === 'PREMIUM'
-                      ? Colors.tierPremium
-                      : Colors.tierFree,
-                },
-              ]}
-            >
-              {profile?.tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'} PLAN
-            </Text>
+              { backgroundColor: isPremium ? Colors.warning : 'rgba(255,255,255,0.2)' }
+            ]}>
+              <Ionicons
+                name={isPremium ? 'star' : 'person-outline'}
+                size={10}
+                color={Colors.white}
+              />
+              <Text style={styles.tierBadgeText}>
+                {isPremium ? 'PREMIUM' : 'FREE'}
+              </Text>
+            </View>
           </View>
-        </View>
+          <Text style={styles.profileName}>{profile?.name}</Text>
+          <Text style={styles.profileEmail}>{profile?.email}</Text>
+        </LinearGradient>
 
-        {/* Profile Info */}
+        {/* Account Details */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Account Details</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name</Text>
-            <Text style={styles.infoValue}>{profile?.name ?? '—'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{profile?.email ?? '—'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>{profile?.phone ?? '—'}</Text>
-          </View>
+          <Text style={styles.cardTitle}>Account Details</Text>
+          {[
+            { icon: 'person-outline', label: 'Full Name', value: profile?.name },
+            { icon: 'mail-outline', label: 'Email', value: profile?.email },
+            { icon: 'call-outline', label: 'Phone', value: profile?.phone },
+          ].map((item, index) => (
+            <View key={index} style={[styles.infoRow, index < 2 && styles.infoRowBorder]}>
+              <View style={styles.infoLeft}>
+                <View style={styles.infoIcon}>
+                  <Ionicons name={item.icon as any} size={16} color={Colors.primary} />
+                </View>
+                <Text style={styles.infoLabel}>{item.label}</Text>
+              </View>
+              <Text style={styles.infoValue}>{item.value ?? '—'}</Text>
+            </View>
+          ))}
         </View>
 
         {/* Subscription */}
         {subscription ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Subscription</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Plan</Text>
-              <Text style={styles.infoValue}>{subscription.plan}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Status</Text>
-              <Text style={styles.infoValue}>{subscription.status}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Expires</Text>
-              <Text style={styles.infoValue}>
-                {new Date(subscription.expiresAt).toLocaleDateString()}
-              </Text>
-            </View>
+            <Text style={styles.cardTitle}>Subscription</Text>
+            {[
+              { label: 'Plan', value: subscription.plan },
+              { label: 'Status', value: subscription.status },
+              { label: 'Expires', value: new Date(subscription.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) },
+            ].map((item, index) => (
+              <View key={index} style={[styles.infoRow, index < 2 && styles.infoRowBorder]}>
+                <Text style={styles.infoLabel}>{item.label}</Text>
+                <Text style={styles.infoValue}>{item.value}</Text>
+              </View>
+            ))}
           </View>
-        ) : (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Upgrade to Premium</Text>
-            <Text style={styles.upgradeText}>
-              Get priority queue placement, live doctor consultations, digital
-              prescriptions and more.
-            </Text>
-            <TouchableOpacity
-              style={[styles.upgradeButton, loadingUpgrade && styles.buttonDisabled]}
-              onPress={() => handleUpgrade('MONTHLY')}
-              disabled={loadingUpgrade}
+        ) : !isPremium ? (
+          <View style={styles.upgradeCard}>
+            <LinearGradient
+              colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+              style={styles.upgradeGradient}
             >
-              {loadingUpgrade ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <Text style={styles.upgradeButtonText}>Monthly Plan</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.upgradeButtonOutline, loadingUpgrade && styles.buttonDisabled]}
-              onPress={() => handleUpgrade('YEARLY')}
-              disabled={loadingUpgrade}
-            >
-              <Text style={styles.upgradeButtonOutlineText}>
-                Yearly Plan — Best Value
+              <View style={styles.upgradeHeader}>
+                <Ionicons name="star-outline" size={24} color={Colors.white} />
+                <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+              </View>
+              <Text style={styles.upgradeSubtitle}>
+                Priority queue · Live consultations · Digital prescriptions
               </Text>
-            </TouchableOpacity>
+
+              <View style={styles.planRow}>
+                <TouchableOpacity
+                  style={styles.planButton}
+                  onPress={() => handleUpgrade('MONTHLY')}
+                  disabled={loadingUpgrade}
+                >
+                  <Text style={styles.planButtonLabel}>Monthly</Text>
+                  <Text style={styles.planButtonPrice}>GHS 100</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.planButton, styles.planButtonBest]}
+                  onPress={() => handleUpgrade('YEARLY')}
+                  disabled={loadingUpgrade}
+                >
+                  <Text style={styles.planBestLabel}>Best Value</Text>
+                  <Text style={styles.planButtonLabel}>Yearly</Text>
+                  <Text style={styles.planButtonPrice}>GHS 1,000</Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
           </View>
-        )}
+        ) : null}
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  pageTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 16,
-  },
-  tierBadgeRow: {
-    marginBottom: 20,
-  },
-  tierBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  tierBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 14,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  upgradeText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 21,
-    marginBottom: 16,
-  },
-  upgradeButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  upgradeButtonOutline: {
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  upgradeButtonText: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  upgradeButtonOutlineText: {
-    color: Colors.primary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  logoutButton: {
-    borderWidth: 1.5,
-    borderColor: Colors.danger,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  logoutText: {
-    color: Colors.danger,
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  profileHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30, alignItems: 'center' },
+  avatarContainer: { position: 'relative', marginBottom: 12 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)' },
+  avatarText: { fontSize: 32, fontWeight: '700', color: Colors.white },
+  tierBadge: { position: 'absolute', bottom: 0, right: -4, flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  tierBadgeText: { fontSize: 10, color: Colors.white, fontWeight: '700' },
+  profileName: { fontSize: 22, fontWeight: '700', color: Colors.white, marginBottom: 4 },
+  profileEmail: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
+  card: { backgroundColor: Colors.surface, marginHorizontal: 20, marginTop: 16, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: Colors.border },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
+  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
+  infoLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  infoIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  infoLabel: { fontSize: 14, color: Colors.textSecondary },
+  infoValue: { fontSize: 14, fontWeight: '500', color: Colors.textPrimary, maxWidth: '55%', textAlign: 'right' },
+  upgradeCard: { marginHorizontal: 20, marginTop: 16, borderRadius: 16, overflow: 'hidden' },
+  upgradeGradient: { padding: 20 },
+  upgradeHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  upgradeTitle: { fontSize: 18, fontWeight: '700', color: Colors.white },
+  upgradeSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 20, lineHeight: 20 },
+  planRow: { flexDirection: 'row', gap: 12 },
+  planButton: { flex: 1, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: 14, alignItems: 'center' },
+  planButtonBest: { backgroundColor: Colors.white },
+  planBestLabel: { fontSize: 10, color: Colors.primary, fontWeight: '700', marginBottom: 4 },
+  planButtonLabel: { fontSize: 14, color: Colors.white, fontWeight: '600' },
+  planButtonPrice: { fontSize: 16, color: Colors.white, fontWeight: '800', marginTop: 4 },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: 20, marginTop: 20, borderWidth: 1.5, borderColor: Colors.danger, borderRadius: 14, paddingVertical: 14 },
+  logoutText: { color: Colors.danger, fontSize: 15, fontWeight: '700' },
 });
