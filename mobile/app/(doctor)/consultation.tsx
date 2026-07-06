@@ -8,12 +8,16 @@ import {
   Alert,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DoctorConsultationScreen() {
   const [consultations, setConsultations] = useState<any[]>([]);
@@ -26,9 +30,7 @@ export default function DoctorConsultationScreen() {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchConsultations();
-  }, []);
+  useEffect(() => { fetchConsultations(); }, []);
 
   const fetchConsultations = async () => {
     try {
@@ -49,7 +51,7 @@ export default function DoctorConsultationScreen() {
       setSessionUrl(response.data.sessionUrl);
       setActiveConsultation(response.data);
       setShowSession(true);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to join session');
     }
   };
@@ -64,17 +66,14 @@ export default function DoctorConsultationScreen() {
       Alert.alert('Error', 'Please enter at least one drug');
       return;
     }
-
     setSubmitting(true);
     try {
-      const drugList = drugs.split(',').map(d => d.trim()).filter(d => d.length > 0);
-
+      const drugList = drugs.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0);
       await api.put(`/consultations/${activeConsultation.id}/complete`, { notes });
       await api.post('/prescriptions', {
         consultationId: activeConsultation.id,
         drugs: drugList,
       });
-
       Alert.alert('Success', 'Prescription issued successfully');
       setShowPrescription(false);
       setDrugs('');
@@ -102,52 +101,72 @@ export default function DoctorConsultationScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>My Consultations</Text>
-        <Text style={styles.subtitle}>Scheduled and ongoing sessions</Text>
+    <>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <LinearGradient
+          colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+          style={styles.header}
+        >
+          <Text style={styles.headerTitle}>My Consultations</Text>
+          <Text style={styles.headerSubtitle}>Scheduled and ongoing sessions</Text>
+        </LinearGradient>
 
-        {consultations.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyText}>No upcoming consultations</Text>
-            <Text style={styles.emptySubtext}>Patients will appear here when they book a session</Text>
-          </View>
-        ) : (
-          consultations.map(con => (
-            <View key={con.id} style={styles.consultationCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.patientLabel}>Patient</Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: STATUS_COLORS[con.status] + '20' }
-                ]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLORS[con.status] }]}>
-                    {con.status}
-                  </Text>
-                </View>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+          {consultations.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="videocam-outline" size={36} color={Colors.primary} />
               </View>
-
-              <Text style={styles.patientId}>ID: {con.patientId}</Text>
-              <Text style={styles.scheduledTime}>
-                {new Date(con.scheduledAt).toLocaleDateString('en-GB', {
-                  weekday: 'short', day: 'numeric', month: 'short',
-                  hour: '2-digit', minute: '2-digit'
-                })}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.joinButton}
-                onPress={() => handleJoin(con)}
-              >
-                <Text style={styles.joinButtonText}>
-                  {con.status === 'IN_PROGRESS' ? 'Rejoin Session' : 'Start Session'}
-                </Text>
-              </TouchableOpacity>
+              <Text style={styles.emptyText}>No upcoming consultations</Text>
+              <Text style={styles.emptySubtext}>Patients will appear here when they book</Text>
             </View>
-          ))
-        )}
-      </ScrollView>
+          ) : (
+            consultations.map(con => (
+              <View key={con.id} style={styles.consultationCard}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.patientAvatar}>
+                    <Ionicons name="person-outline" size={20} color={Colors.primary} />
+                  </View>
+                  <View style={styles.cardInfo}>
+                    <Text style={styles.patientLabel}>Patient Consultation</Text>
+                    <Text style={styles.scheduledTime}>
+                      {new Date(con.scheduledAt).toLocaleDateString('en-GB', {
+                        weekday: 'short', day: 'numeric', month: 'short',
+                        hour: '2-digit', minute: '2-digit'
+                      })}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: STATUS_COLORS[con.status] + '20' }
+                  ]}>
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[con.status] }]}>
+                      {con.status}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.joinButton}
+                  onPress={() => handleJoin(con)}
+                >
+                  <LinearGradient
+                    colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+                    style={styles.joinButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Ionicons name="videocam-outline" size={16} color={Colors.white} />
+                    <Text style={styles.joinButtonText}>
+                      {con.status === 'IN_PROGRESS' ? 'Rejoin Session' : 'Start Session'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Video Session Modal */}
       <Modal visible={showSession} animationType="slide" onRequestClose={handleEndSession}>
@@ -155,6 +174,7 @@ export default function DoctorConsultationScreen() {
           <View style={styles.sessionHeader}>
             <Text style={styles.sessionTitle}>Live Session</Text>
             <TouchableOpacity style={styles.endButton} onPress={handleEndSession}>
+              <Ionicons name="document-text-outline" size={16} color={Colors.white} />
               <Text style={styles.endButtonText}>End & Prescribe</Text>
             </TouchableOpacity>
           </View>
@@ -171,98 +191,116 @@ export default function DoctorConsultationScreen() {
 
       {/* Prescription Modal */}
       <Modal visible={showPrescription} animationType="slide" onRequestClose={() => setShowPrescription(false)}>
-        <ScrollView style={styles.prescriptionModal} contentContainerStyle={styles.prescriptionContent}>
-          <Text style={styles.prescriptionTitle}>Issue Prescription</Text>
-          <Text style={styles.prescriptionSubtitle}>
-            Enter the drugs to prescribe. Separate multiple drugs with commas.
-          </Text>
-
-          <Text style={styles.fieldLabel}>Drugs</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="e.g. Paracetamol 500mg, Amoxicillin 250mg, Vitamin C"
-            placeholderTextColor={Colors.textDisabled}
-            value={drugs}
-            onChangeText={setDrugs}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <Text style={styles.fieldLabel}>Consultation Notes (optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Add clinical notes for this consultation..."
-            placeholderTextColor={Colors.textDisabled}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            style={[styles.issueButton, submitting && styles.buttonDisabled]}
-            onPress={handleIssuePrescription}
-            disabled={submitting}
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.headerGradientStart }} edges={['top']}>
+          <LinearGradient
+            colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+            style={styles.prescHeader}
           >
-            {submitting ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.issueButtonText}>Issue Prescription</Text>
-            )}
-          </TouchableOpacity>
+            <Text style={styles.prescHeaderTitle}>Issue Prescription</Text>
+            <Text style={styles.prescHeaderSubtitle}>Enter drugs and consultation notes</Text>
+          </LinearGradient>
 
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={() => {
-              setShowPrescription(false);
-              fetchConsultations();
-            }}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-            <Text style={styles.skipButtonText}>Complete Without Prescription</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <ScrollView style={styles.prescContainer} contentContainerStyle={styles.prescContent}>
+              <Text style={styles.fieldLabel}>Prescribed Drugs</Text>
+              <Text style={styles.fieldHint}>Separate multiple drugs with commas</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="e.g. Paracetamol 500mg, Amoxicillin 250mg"
+                placeholderTextColor={Colors.textDisabled}
+                value={drugs}
+                onChangeText={setDrugs}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <Text style={styles.fieldLabel}>Consultation Notes</Text>
+              <Text style={styles.fieldHint}>Optional clinical notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Add clinical observations..."
+                placeholderTextColor={Colors.textDisabled}
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <TouchableOpacity
+                style={[styles.issueButton, submitting && styles.buttonDisabled]}
+                onPress={handleIssuePrescription}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="document-text-outline" size={18} color={Colors.white} />
+                    <Text style={styles.issueButtonText}>Issue Prescription</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => { setShowPrescription(false); fetchConsultations(); }}
+              >
+                <Text style={styles.skipButtonText}>Complete Without Prescription</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 24, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  title: { fontSize: 26, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 4 },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 24 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: Colors.white },
+  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  emptyState: { alignItems: 'center', paddingVertical: 80 },
+  emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   emptyText: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary, marginBottom: 4 },
-  emptySubtext: { fontSize: 13, color: Colors.textDisabled, textAlign: 'center', paddingHorizontal: 20 },
+  emptySubtext: { fontSize: 13, color: Colors.textDisabled, textAlign: 'center' },
   consultationCard: { backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  patientAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  cardInfo: { flex: 1 },
   patientLabel: { fontSize: 12, color: Colors.textDisabled, textTransform: 'uppercase', letterSpacing: 0.5 },
+  scheduledTime: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginTop: 2 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusText: { fontSize: 12, fontWeight: '600' },
-  patientId: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4 },
-  scheduledTime: { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
-  joinButton: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  joinButton: { borderRadius: 12, overflow: 'hidden' },
+  joinButtonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12 },
   joinButtonText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
   sessionContainer: { flex: 1, backgroundColor: Colors.black },
-  sessionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: Colors.textPrimary },
+  sessionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: Colors.headerGradientStart },
   sessionTitle: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-  endButton: { backgroundColor: Colors.danger, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  endButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.danger, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   endButtonText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
   webview: { flex: 1 },
-  prescriptionModal: { flex: 1, backgroundColor: Colors.background },
-  prescriptionContent: { padding: 24, paddingTop: 60, paddingBottom: 40 },
-  prescriptionTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 8 },
-  prescriptionSubtitle: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21, marginBottom: 24 },
-  fieldLabel: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 8, marginTop: 16 },
-  input: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: Colors.textPrimary },
+  prescHeader: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
+  prescHeaderTitle: { fontSize: 22, fontWeight: '700', color: Colors.white },
+  prescHeaderSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  prescContainer: { flex: 1, backgroundColor: Colors.background },
+  prescContent: { padding: 20, paddingBottom: 40 },
+  fieldLabel: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4, marginTop: 16 },
+  fieldHint: { fontSize: 12, color: Colors.textDisabled, marginBottom: 8 },
+  input: { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: Colors.textPrimary },
   textArea: { height: 110 },
-  issueButton: { backgroundColor: Colors.primary, borderRadius: 10, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
+  issueButton: { borderRadius: 14, overflow: 'hidden', marginTop: 24, backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 },
   issueButtonText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
   buttonDisabled: { opacity: 0.6 },
-  skipButton: { alignItems: 'center', marginTop: 16, paddingVertical: 8 },
+  skipButton: { alignItems: 'center', marginTop: 16, paddingVertical: 12 },
   skipButtonText: { color: Colors.textSecondary, fontSize: 14 },
 });
