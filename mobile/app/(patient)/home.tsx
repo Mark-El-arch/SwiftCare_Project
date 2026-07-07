@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
@@ -16,7 +18,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
-import { Alert, TextInput } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -31,20 +32,22 @@ export default function HomeScreen() {
   const [patient, setPatient] = useState<any>(null);
   const [queueStatus, setQueueStatus] = useState<any>(null);
   const [upcomingConsultation, setUpcomingConsultation] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [departments, setDepartments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = async () => {
     try {
-      const [patientRes, appointmentsRes, consultationsRes] = await Promise.all([
+      const [patientRes, appointmentsRes, consultationsRes, deptsRes] = await Promise.all([
         api.get('/patients/me'),
         api.get('/appointments'),
         api.get('/consultations').catch(() => ({ data: [] })),
+        api.get('/departments'),
       ]);
 
       setPatient(patientRes.data);
+      setDepartments(deptsRes.data);
 
       const pendingApt = appointmentsRes.data.find((a: any) => a.status === 'PENDING');
       if (pendingApt) {
@@ -60,9 +63,6 @@ export default function HomeScreen() {
 
       const upcoming = consultationsRes.data.find((c: any) => c.status === 'SCHEDULED');
       setUpcomingConsultation(upcoming || null);
-
-      const deptsRes = await api.get('/departments');
-      setDepartments(deptsRes.data);
     } catch (error) {
       console.error('Failed to fetch home data');
     } finally {
@@ -84,6 +84,11 @@ export default function HomeScreen() {
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   };
+
+  const filteredDepartments = departments.filter(dept =>
+    searchQuery.length === 0 ||
+    dept.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -115,13 +120,13 @@ export default function HomeScreen() {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.headerIcon}
-                onPress={() => Alert.alert('Notifications', 'No new notifications')}
+                onPress={() => Alert.alert('Notifications', 'No new notifications at this time.')}
               >
                 <Ionicons name="notifications-outline" size={22} color={Colors.white} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.headerIcon}
-                onPress={() => Alert.alert('SwiftCare', 'Version 1.0.0\nSmart Hospital Queue & Consultation App\n\nGroup 60 — KNUST')}
+                onPress={() => Alert.alert('SwiftCare', 'Version 1.0.0\nSmart Hospital Queue & Consultation\n\nGroup 60 — KNUST')}
               >
                 <Ionicons name="help-circle-outline" size={22} color={Colors.white} />
               </TouchableOpacity>
@@ -140,7 +145,9 @@ export default function HomeScreen() {
                 </View>
                 <View>
                   <Text style={styles.activeQueueTitle}>{queueStatus.departmentName}</Text>
-                  <Text style={styles.activeQueueSub}>Current Queue {queueStatus.currentPosition} of 17</Text>
+                  <Text style={styles.activeQueueSub}>
+                    Current Queue {queueStatus.currentPosition}
+                  </Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
@@ -153,7 +160,9 @@ export default function HomeScreen() {
               <Text style={styles.queueNumberLabel}>Queue {queueStatus.currentPosition}</Text>
               <Text style={styles.queueNumberSub}>
                 Your turn at {queueStatus.estimatedCallTime
-                  ? new Date(queueStatus.estimatedCallTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                  ? new Date(queueStatus.estimatedCallTime).toLocaleTimeString('en-GB', {
+                      hour: '2-digit', minute: '2-digit'
+                    })
                   : '--:--'}
               </Text>
             </View>
@@ -166,7 +175,7 @@ export default function HomeScreen() {
             <Ionicons name="search-outline" size={18} color={Colors.textDisabled} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search doctor or clinic"
+              placeholder="Search clinics and departments"
               placeholderTextColor={Colors.textDisabled}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -185,9 +194,9 @@ export default function HomeScreen() {
               onPress={() => router.push('/(patient)/consultation')}
             >
               <Ionicons name="notifications-outline" size={16} color={Colors.primary} />
-              <Text style={styles.upcomingText}>Your next medical checkup</Text>
+              <Text style={styles.upcomingText}>Upcoming consultation with Dr. {upcomingConsultation.doctorName}</Text>
               <View style={styles.upcomingBadge}>
-                <Text style={styles.upcomingBadgeText}>Tomorrow</Text>
+                <Text style={styles.upcomingBadgeText}>Soon</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -213,19 +222,19 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>Hospital Clinics</Text>
           </View>
 
-          <View style={styles.clinicsGrid}>
-            {departments
-              .filter(dept =>
-                searchQuery.length === 0 ||
-                dept.name.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map((dept, index) => (
+          {filteredDepartments.length === 0 ? (
+            <View style={styles.noResults}>
+              <Text style={styles.noResultsText}>No clinics match "{searchQuery}"</Text>
+            </View>
+          ) : (
+            <View style={styles.clinicsGrid}>
+              {filteredDepartments.map((dept) => (
                 <TouchableOpacity
                   key={dept.id}
                   style={styles.clinicCard}
                   onPress={() => router.push({
                     pathname: '/(patient)/appointments',
-                    params: { preSelectedDept: dept.id, deptName: dept.name }
+                    params: { preSelectedDept: dept.id },
                   })}
                 >
                   <View style={styles.clinicIcon}>
@@ -234,7 +243,8 @@ export default function HomeScreen() {
                   <Text style={styles.clinicName} numberOfLines={2}>{dept.name}</Text>
                 </TouchableOpacity>
               ))}
-          </View>
+            </View>
+          )}
 
           {/* Premium Upgrade */}
           {patient?.tier === 'FREE' && (
@@ -284,61 +294,24 @@ const styles = StyleSheet.create({
   queueNumberLabel: { fontSize: 20, fontWeight: '700', color: Colors.white },
   queueNumberSub: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   body: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-  searchText: { fontSize: 14, color: Colors.textDisabled },
+  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  searchInput: { flex: 1, fontSize: 14, color: Colors.textPrimary, padding: 0 },
   upcomingBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.primaryLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 20 },
   upcomingText: { flex: 1, fontSize: 13, color: Colors.primary, fontWeight: '500' },
   upcomingBadge: { backgroundColor: Colors.primary, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   upcomingBadgeText: { fontSize: 11, color: Colors.white, fontWeight: '600' },
-  quickActionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
-  quickAction: { alignItems: 'center', width: (width - 40) / 5 },
-  quickActionIcon: { width: 52, height: 52, borderRadius: 14, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  quickActionLabel: { fontSize: 10, color: Colors.textSecondary, textAlign: 'center', lineHeight: 14 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  quickActionsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 28 },
+  quickAction: { alignItems: 'center', width: (width - 40) / 3 },
+  quickActionIcon: { width: 60, height: 60, borderRadius: 16, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  quickActionLabel: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center', lineHeight: 16 },
+  sectionHeader: { marginBottom: 14 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  seeAll: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
- clinicsGrid: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 12,
-  marginBottom: 24,
-},
-clinicCard: {
-  alignItems: 'center',
-  width: (width - 40 - 36) / 4,
-},
-clinicIcon: {
-  width: 56,
-  height: 56,
-  borderRadius: 16,
-  backgroundColor: Colors.primaryLight,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginBottom: 6,
-},
-clinicName: {
-  fontSize: 11,
-  color: Colors.textSecondary,
-  textAlign: 'center',
-  lineHeight: 14,
-},
-searchBar: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 10,
-  backgroundColor: Colors.surface,
-  borderRadius: 12,
-  paddingHorizontal: 16,
-  paddingVertical: 12,
-  marginBottom: 16,
-  borderWidth: 1,
-  borderColor: Colors.border,
-},
-searchInput: {
-  flex: 1,
-  fontSize: 14,
-  color: Colors.textPrimary,
-  padding: 0,
-},
+  noResults: { paddingVertical: 20, alignItems: 'center' },
+  noResultsText: { fontSize: 13, color: Colors.textDisabled },
+  clinicsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  clinicCard: { alignItems: 'center', width: (width - 40 - 36) / 4 },
+  clinicIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  clinicName: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center', lineHeight: 14 },
   upgradeCard: { borderRadius: 16, overflow: 'hidden' },
   upgradeGradient: { padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   upgradeContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
