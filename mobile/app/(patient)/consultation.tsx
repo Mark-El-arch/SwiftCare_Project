@@ -166,14 +166,21 @@ export default function ConsultationScreen() {
                 onPress={handleBook}
                 disabled={booking}
               >
-                {booking ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <>
-                    <Ionicons name="videocam-outline" size={18} color={Colors.white} />
-                    <Text style={styles.confirmButtonText}>Confirm Booking</Text>
-                  </>
-                )}
+                <LinearGradient
+                  colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+                  style={styles.confirmButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {booking ? (
+                    <ActivityIndicator color={Colors.white} />
+                  ) : (
+                    <>
+                      <Ionicons name="videocam-outline" size={18} color={Colors.white} />
+                      <Text style={styles.confirmButtonText}>Confirm Booking</Text>
+                    </>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           )}
@@ -293,6 +300,7 @@ const styles = StyleSheet.create({
   availableDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
   confirmButton: { borderRadius: 12, overflow: 'hidden', marginTop: 12 },
   confirmButtonText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+  confirmButtonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 },
   buttonDisabled: { opacity: 0.6 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
