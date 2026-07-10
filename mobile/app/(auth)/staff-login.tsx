@@ -51,6 +51,24 @@ export default function StaffLoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.headerGradient}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back-outline" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Ionicons name="medical-outline" size={32} color={Colors.white} />
+          </View>
+          <Text style={styles.appName}>Staff Login</Text>
+          <Text style={styles.appTagline}>For doctors and pharmacists only</Text>
+        </View>
+      </LinearGradient>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -59,25 +77,6 @@ export default function StaffLoginScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <LinearGradient
-            colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-            style={styles.headerGradient}
-          >
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back-outline" size={22} color={Colors.white} />
-            </TouchableOpacity>
-            <View style={styles.logoContainer}>
-              <View style={styles.logo}>
-                <Ionicons name="medical-outline" size={32} color={Colors.white} />
-              </View>
-              <Text style={styles.appName}>Staff Login</Text>
-              <Text style={styles.appTagline}>For doctors and pharmacists only</Text>
-            </View>
-          </LinearGradient>
-
           <View style={styles.formContainer}>
             <Text style={styles.label}>Staff Email</Text>
             <View style={styles.inputContainer}>

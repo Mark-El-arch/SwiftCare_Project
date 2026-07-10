@@ -90,10 +90,8 @@ export default function ProfileScreen() {
   const isPremium = profile?.tier === 'PREMIUM';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
-        {/* Profile Header */}
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Fixed Header */}
         <LinearGradient
           colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
           style={styles.profileHeader}
@@ -121,7 +119,12 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>{profile?.name}</Text>
           <Text style={styles.profileEmail}>{profile?.email}</Text>
         </LinearGradient>
-
+          
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Account Details */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Account Details</Text>
@@ -200,7 +203,6 @@ export default function ProfileScreen() {
           <Ionicons name="log-out-outline" size={18} color={Colors.danger} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,7 +211,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 40, },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   profileHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30, alignItems: 'center' },
   avatarContainer: { position: 'relative', marginBottom: 12 },

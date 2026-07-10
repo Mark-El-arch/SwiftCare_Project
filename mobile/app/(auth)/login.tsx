@@ -46,25 +46,24 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header */}
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.headerGradient}
+      >
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Ionicons name="medical-outline" size={36} color={Colors.white} />
+          </View>
+          <Text style={styles.appName}>SwiftCare</Text>
+          <Text style={styles.appTagline}>Smart Hospital Queue & Consultation</Text>
+        </View>
+      </LinearGradient>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          {/* Header */}
-          <LinearGradient
-            colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.logoContainer}>
-              <View style={styles.logo}>
-                <Ionicons name="medical-outline" size={36} color={Colors.white} />
-              </View>
-              <Text style={styles.appName}>SwiftCare</Text>
-              <Text style={styles.appTagline}>Smart Hospital Queue & Consultation</Text>
-            </View>
-          </LinearGradient>
-
           {/* Form */}
           <View style={styles.formContainer}>
             <Text style={styles.title}>Welcome Back</Text>

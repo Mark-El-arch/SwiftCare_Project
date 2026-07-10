@@ -52,6 +52,24 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.headerGradient}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back-outline" size={22} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Ionicons name="person-add-outline" size={32} color={Colors.white} />
+          </View>
+          <Text style={styles.appName}>Create Account</Text>
+          <Text style={styles.appTagline}>Join SwiftCare to manage your healthcare</Text>
+        </View>
+      </LinearGradient>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -61,25 +79,6 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-            style={styles.headerGradient}
-          >
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back-outline" size={22} color={Colors.white} />
-            </TouchableOpacity>
-            <View style={styles.logoContainer}>
-              <View style={styles.logo}>
-                <Ionicons name="person-add-outline" size={32} color={Colors.white} />
-              </View>
-              <Text style={styles.appName}>Create Account</Text>
-              <Text style={styles.appTagline}>Join SwiftCare to manage your healthcare</Text>
-            </View>
-          </LinearGradient>
-
           <View style={styles.formContainer}>
             <Text style={styles.label}>Full Name</Text>
             <View style={styles.inputContainer}>
@@ -186,7 +185,7 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.headerGradientStart },
-  container: { flexGrow: 1, backgroundColor: Colors.background },
+  container: { flexGrow: 1, backgroundColor: Colors.background, },
   headerGradient: { paddingTop: 16, paddingBottom: 32, paddingHorizontal: 20 },
   backButton: { marginBottom: 16 },
   logoContainer: { alignItems: 'center' },

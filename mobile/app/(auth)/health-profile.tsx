@@ -46,6 +46,18 @@ export default function HealthProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerIcon}>
+          <Ionicons name="heart-outline" size={32} color={Colors.white} />
+        </View>
+        <Text style={styles.headerTitle}>Health Profile</Text>
+        <Text style={styles.headerSubtitle}>
+          Help us understand your health better for accurate symptom assessment
+        </Text>
+      </LinearGradient>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -55,19 +67,6 @@ export default function HealthProfileScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerIcon}>
-              <Ionicons name="heart-outline" size={32} color={Colors.white} />
-            </View>
-            <Text style={styles.headerTitle}>Health Profile</Text>
-            <Text style={styles.headerSubtitle}>
-              Help us understand your health better for accurate symptom assessment
-            </Text>
-          </LinearGradient>
-
           <View style={styles.formContainer}>
             <View style={styles.infoBox}>
               <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
