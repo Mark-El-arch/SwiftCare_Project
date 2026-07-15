@@ -1,36 +1,44 @@
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import api from '../../services/api';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
 
-interface PatientProfile {
-  name: string;
-  email: string;
-  phone: string;
-  tier: 'FREE' | 'PREMIUM';
-}
+type ProfileData = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  tier?: string;
+};
 
-interface Subscription {
-  plan: string;
-  status: string;
-  expiresAt: string;
-}
+type SubscriptionData = {
+  plan?: string;
+  status?: string;
+  expiresAt?: string;
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
 
-  const [profile, setProfile] = useState<PatientProfile | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [subscription, setSubscription] =
+    useState<SubscriptionData | null>(null);
+
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
@@ -44,7 +52,7 @@ export default function ProfileScreen() {
       const response = await api.get('/patients/me');
       setProfile(response.data);
     } catch (error) {
-      // handle error
+      console.error('Failed to fetch profile:', error);
     } finally {
       setLoadingProfile(false);
     }
@@ -54,271 +62,809 @@ export default function ProfileScreen() {
     try {
       const response = await api.get('/subscriptions/status');
       setSubscription(response.data);
-    } catch (error) {
-      // no subscription yet
+    } catch {
+      setSubscription(null);
     }
   };
 
-  const handleUpgrade = async (plan: 'MONTHLY' | 'YEARLY') => {
+  const handleUpgrade = async (
+    plan: 'MONTHLY' | 'YEARLY'
+  ) => {
     setLoadingUpgrade(true);
+
     try {
-      const response = await api.post('/subscriptions/upgrade', { plan });
+      const response = await api.post(
+        '/subscriptions/upgrade',
+        { plan }
+      );
+
       const { paymentUrl } = response.data;
+
       Alert.alert(
-        'Upgrade to Premium',
-        `Open this link to complete payment:\n\n${paymentUrl}`,
+        'Complete Payment',
+        `Open this link to complete your upgrade:\n\n${paymentUrl}`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {
-      const message =
-        error.response?.data?.message || 'Failed to initiate upgrade.';
-      Alert.alert('Error', message);
+      Alert.alert(
+        'Error',
+        error.response?.data?.message ||
+          'Failed to initiate upgrade.'
+      );
     } finally {
       setLoadingUpgrade(false);
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.removeItem('accessToken');
-          router.replace('/(auth)/login');
-        },
-      },
-    ]);
-  };
+const handleLogout = async () => {
+  try {
 
-  if (loadingProfile) {
+    await AsyncStorage.multiRemove([
+      'accessToken',
+      'swiftcareSettings',
+      'swiftcareNotifications',
+      'swiftcarePrivacySettings',
+    ]);
+
+
+    router.replace('/(auth)/login');
+
+
+  } catch (error) {
+
+    console.error(
+      'Logout failed:',
+      error
+    );
+
+  }
+};  if (loadingProfile) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+      <View
+        style={[
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+        />
       </View>
     );
   }
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.pageTitle}>My Profile</Text>
+  const isPremium = profile?.tier === 'PREMIUM';
 
-      {/* Tier Badge */}
-      <View style={styles.tierBadgeRow}>
+  const accountItems = [
+    {
+      icon: 'person-outline' as const,
+      label: 'Full Name',
+      value: profile?.name,
+    },
+    {
+      icon: 'mail-outline' as const,
+      label: 'Email',
+      value: profile?.email,
+    },
+    {
+      icon: 'call-outline' as const,
+      label: 'Phone',
+      value: profile?.phone,
+    },
+  ];
+
+  return (
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor: colors.headerGradientStart,
+        },
+      ]}
+      edges={['top']}
+    >
+      <LinearGradient
+        colors={[
+          colors.headerGradientStart,
+          colors.headerGradientEnd,
+        ]}
+        style={styles.profileHeader}
+      >
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.tierBadge,
+              {
+                backgroundColor: isPremium
+                  ? colors.warning
+                  : 'rgba(255,255,255,0.2)',
+              },
+            ]}
+          >
+            <Ionicons
+              name={isPremium ? 'star' : 'person-outline'}
+              size={10}
+              color={colors.white}
+            />
+
+            <Text style={styles.tierBadgeText}>
+              {isPremium ? 'PREMIUM' : 'FREE'}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.profileName}>
+          {profile?.name || 'SwiftCare User'}
+        </Text>
+
+        <Text style={styles.profileEmail}>
+          {profile?.email || 'No email available'}
+        </Text>
+      </LinearGradient>
+
+      <ScrollView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background },
+        ]}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Account details */}
         <View
           style={[
-            styles.tierBadge,
+            styles.card,
             {
-              backgroundColor:
-                profile?.tier === 'PREMIUM'
-                  ? Colors.tierPremiumBg
-                  : Colors.tierFreeBg,
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
             },
           ]}
         >
           <Text
             style={[
-              styles.tierBadgeText,
+              styles.cardTitle,
+              { color: colors.textPrimary },
+            ]}
+          >
+            Account Details
+          </Text>
+
+          {accountItems.map((item, index) => (
+            <View
+              key={item.label}
+              style={[
+                styles.infoRow,
+                index < accountItems.length - 1 && {
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
+              <View style={styles.infoLeft}>
+                <View
+                  style={[
+                    styles.infoIcon,
+                    {
+                      backgroundColor: colors.primaryLight,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={item.icon}
+                    size={16}
+                    color={colors.primary}
+                  />
+                </View>
+
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.infoValue,
+                  { color: colors.textPrimary },
+                ]}
+              >
+                {item.value || '—'}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Subscription */}
+        {subscription ? (
+          <View
+            style={[
+              styles.card,
               {
-                color:
-                  profile?.tier === 'PREMIUM'
-                    ? Colors.tierPremium
-                    : Colors.tierFree,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
               },
             ]}
           >
-            {profile?.tier === 'PREMIUM' ? 'PREMIUM' : 'FREE'} PLAN
-          </Text>
-        </View>
-      </View>
-
-      {/* Profile Info */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Account Details</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Name</Text>
-          <Text style={styles.infoValue}>{profile?.name ?? '—'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoValue}>{profile?.email ?? '—'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Phone</Text>
-          <Text style={styles.infoValue}>{profile?.phone ?? '—'}</Text>
-        </View>
-      </View>
-
-      {/* Subscription */}
-      {subscription ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Subscription</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Plan</Text>
-            <Text style={styles.infoValue}>{subscription.plan}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status</Text>
-            <Text style={styles.infoValue}>{subscription.status}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Expires</Text>
-            <Text style={styles.infoValue}>
-              {new Date(subscription.expiresAt).toLocaleDateString()}
+            <Text
+              style={[
+                styles.cardTitle,
+                { color: colors.textPrimary },
+              ]}
+            >
+              Subscription
             </Text>
+
+            {[
+              {
+                label: 'Plan',
+                value: subscription.plan || '—',
+              },
+              {
+                label: 'Status',
+                value: subscription.status || '—',
+              },
+              {
+                label: 'Expires',
+                value: subscription.expiresAt
+                  ? new Date(
+                      subscription.expiresAt
+                    ).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '—',
+              },
+            ].map((item, index, array) => (
+              <View
+                key={item.label}
+                style={[
+                  styles.infoRow,
+                  index < array.length - 1 && {
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.infoValue,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  {item.value}
+                </Text>
+              </View>
+            ))}
           </View>
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Upgrade to Premium</Text>
-          <Text style={styles.upgradeText}>
-            Get priority queue placement, live doctor consultations, digital
-            prescriptions and more.
+        ) : !isPremium ? (
+          <View style={styles.upgradeCard}>
+            <LinearGradient
+              colors={[
+                colors.headerGradientStart,
+                colors.headerGradientEnd,
+              ]}
+              style={styles.upgradeGradient}
+            >
+              <View style={styles.upgradeHeader}>
+                <Ionicons
+                  name="star-outline"
+                  size={24}
+                  color={colors.white}
+                />
+
+                <Text style={styles.upgradeTitle}>
+                  Upgrade to Premium
+                </Text>
+              </View>
+
+              <Text style={styles.upgradeSubtitle}>
+                Priority queue · Live consultations · Digital
+                prescriptions
+              </Text>
+
+              <View style={styles.planRow}>
+                <TouchableOpacity
+                  style={styles.planButton}
+                  onPress={() => handleUpgrade('MONTHLY')}
+                  disabled={loadingUpgrade}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.planButtonLabel}>
+                    Monthly
+                  </Text>
+
+                  <Text style={styles.planButtonPrice}>
+                    GHS 100
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.planButton,
+                    styles.planButtonBest,
+                    { backgroundColor: colors.white },
+                  ]}
+                  onPress={() => handleUpgrade('YEARLY')}
+                  disabled={loadingUpgrade}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.planBestLabel,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    Best Value
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.planButtonLabelBest,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    Yearly
+                  </Text>
+
+                  <Text
+                    style={[
+                      styles.planButtonPriceBest,
+                      { color: colors.primary },
+                    ]}
+                  >
+                    GHS 1,000
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {loadingUpgrade ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.white}
+                  style={styles.upgradeLoader}
+                />
+              ) : null}
+            </LinearGradient>
+          </View>
+        ) : null}
+
+        {/* Preferences */}
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.cardTitle,
+              { color: colors.textPrimary },
+            ]}
+          >
+            Preferences
           </Text>
           <TouchableOpacity
-            style={[styles.upgradeButton, loadingUpgrade && styles.buttonDisabled]}
-            onPress={() => handleUpgrade('MONTHLY')}
-            disabled={loadingUpgrade}
-          >
-            {loadingUpgrade ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.upgradeButtonText}>Monthly Plan</Text>
-            )}
-          </TouchableOpacity>
+  style={styles.menuRow}
+  activeOpacity={0.7}
+  onPress={() => router.push('/edit-profile')}
+>
+  <View style={styles.menuLeft}>
+    <View
+      style={[
+        styles.infoIcon,
+        {
+          backgroundColor: colors.primaryLight,
+        },
+      ]}
+    >
+      <Ionicons
+        name="create-outline"
+        size={18}
+        color={colors.primary}
+      />
+    </View>
+
+    <View style={styles.menuTextContainer}>
+      <Text
+        style={[
+          styles.menuTitle,
+          {
+            color: colors.textPrimary,
+          },
+        ]}
+      >
+        Edit Profile
+      </Text>
+
+      <Text
+        style={[
+          styles.menuSubtitle,
+          {
+            color: colors.textSecondary,
+          },
+        ]}
+      >
+        Update your name, phone number and personal details
+      </Text>
+    </View>
+  </View>
+
+  <Ionicons
+    name="chevron-forward"
+    size={20}
+    color={colors.textSecondary}
+  />
+</TouchableOpacity>
+
+<View
+  style={[
+    styles.menuDivider,
+    {
+      backgroundColor: colors.border,
+    },
+  ]}
+/>
+
           <TouchableOpacity
-            style={[styles.upgradeButtonOutline, loadingUpgrade && styles.buttonDisabled]}
-            onPress={() => handleUpgrade('YEARLY')}
-            disabled={loadingUpgrade}
+            style={styles.menuRow}
+            activeOpacity={0.7}
+            onPress={() => router.push('/settings')}
           >
-            <Text style={styles.upgradeButtonOutlineText}>
-              Yearly Plan — Best Value
-            </Text>
+            <View style={styles.menuLeft}>
+              <View
+                style={[
+                  styles.infoIcon,
+                  {
+                    backgroundColor: colors.primaryLight,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+
+              <View style={styles.menuTextContainer}>
+                <Text
+                  style={[
+                    styles.menuTitle,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  Settings
+                </Text>
+
+                <Text
+                  style={[
+                    styles.menuSubtitle,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Notifications, appearance and security
+                </Text>
+              </View>
+            </View>
+
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
-      )}
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        
+
+        {/* Logout */}
+        <TouchableOpacity
+          style={[
+            styles.logoutButton,
+            { borderColor: colors.danger },
+          ]}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={18}
+            color={colors.danger}
+          />
+
+          <Text
+            style={[
+              styles.logoutText,
+              { color: colors.danger },
+            ]}
+          >
+            Logout
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
+
   content: {
-    padding: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
+
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
   },
-  pageTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 16,
+
+  profileHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
+    alignItems: 'center',
   },
-  tierBadgeRow: {
-    marginBottom: 20,
+
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 12,
   },
+
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+
   tierBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    position: 'absolute',
+    bottom: 0,
+    right: -4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
+
   tierBadgeText: {
-    fontSize: 12,
+    fontSize: 10,
+    color: Colors.white,
     fontWeight: '700',
-    letterSpacing: 0.8,
   },
+
+  profileName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.white,
+    marginBottom: 4,
+  },
+
+  profileEmail: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+  },
+
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 16,
     padding: 18,
-    marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
-  sectionTitle: {
-    fontSize: 16,
+
+  cardTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    color: Colors.textPrimary,
     marginBottom: 14,
   },
+
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    alignItems: 'center',
+    paddingVertical: 12,
   },
+
+  infoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+
+  infoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   infoLabel: {
     fontSize: 14,
-    color: Colors.textSecondary,
   },
+
   infoValue: {
     fontSize: 14,
-    color: Colors.textPrimary,
     fontWeight: '500',
-    maxWidth: '60%',
+    maxWidth: '55%',
     textAlign: 'right',
   },
-  upgradeText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 21,
-    marginBottom: 16,
+
+  upgradeCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
-  upgradeButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
+
+  upgradeGradient: {
+    padding: 20,
+  },
+
+  upgradeHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 8,
   },
-  upgradeButtonOutline: {
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  upgradeButtonText: {
+
+  upgradeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.white,
-    fontSize: 15,
-    fontWeight: '700',
   },
-  upgradeButtonOutlineText: {
-    color: Colors.primary,
-    fontSize: 15,
-    fontWeight: '700',
+
+  upgradeSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 20,
+    lineHeight: 20,
   },
-  buttonDisabled: {
-    opacity: 0.6,
+
+  planRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  logoutButton: {
-    borderWidth: 1.5,
-    borderColor: Colors.danger,
-    borderRadius: 10,
-    paddingVertical: 14,
+
+  planButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 12,
+    padding: 14,
     alignItems: 'center',
-    marginTop: 8,
   },
+
+  planButtonBest: {
+    flex: 1,
+  },
+
+  planBestLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+
+  planButtonLabel: {
+    fontSize: 14,
+    color: Colors.white,
+    fontWeight: '600',
+  },
+
+  planButtonPrice: {
+    fontSize: 16,
+    color: Colors.white,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+
+  planButtonLabelBest: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  planButtonPriceBest: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+
+  upgradeLoader: {
+    marginTop: 14,
+  },
+
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+
+  menuTextContainer: {
+    flex: 1,
+  },
+
+  menuTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+
+  menuSubtitle: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+
   logoutText: {
-    color: Colors.danger,
     fontSize: 15,
     fontWeight: '700',
   },
+  menuDivider: {
+  height: 1,
+  marginVertical: 8,
+  marginLeft: 44,
+},
 });
