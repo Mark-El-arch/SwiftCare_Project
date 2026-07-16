@@ -9,9 +9,11 @@ const api = axios.create({
 
 api.interceptors.request.use(async config => {
   const token = await AsyncStorage.getItem('accessToken');
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -21,6 +23,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('accessToken');
     }
+
     return Promise.reject(error);
   }
 );
