@@ -4,7 +4,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   RefreshControl,
   Dimensions,
   TextInput,
